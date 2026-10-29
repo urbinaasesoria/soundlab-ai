@@ -1,0 +1,8 @@
+# Normaliza finales de línea. © 2026 URBINA ASESORÍA E INVERSIONES S.A.C.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.woff binary
+*.woff2 binary
+*.pdf binary

@@ -1,0 +1,58 @@
+# ============================================================
+#  URBINA Studio — PROPIEDAD DE URBINA ASESORÍA E INVERSIONES S.A.C.
+#  © 2026 Todos los derechos reservados.
+# ============================================================
+
+# dependencias
+node_modules/
+.pnpm-store/
+
+# builds
+dist/
+dist-ssr/
+*.local
+
+# evidencia de auditoría e ingeniería inversa: NUNCA en el repositorio
+_recon/
+_audit/
+audit-output/
+
+# caché local de npm (entornos con red restringida)
+.npm-cache/
+
+# datos de calibración generados
+data/dataset.json
+data/weights.trained.json
+
+# artefactos de herramientas
+coverage/
+.vitest/
+test-results/
+playwright-report/
+blob-report/
+.playwright-mcp/
+.tmp/
+tmp/
+
+# entornos y secretos
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# sistema y editores
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*.swo
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-error.log*

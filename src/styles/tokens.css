@@ -1,0 +1,88 @@
+/* ============================================================
+   URBINA STUDIO — design tokens
+   Sistema de diseño propio. Propiedad de URBINA ASESORÍA E
+   INVERSIONES S.A.C. © 2026. Todos los derechos reservados.
+   ============================================================ */
+
+:root {
+  /* brand */
+  --emerald: #00ce59;
+  --emerald-bright: #23d977;
+  --emerald-deep: #00502f;
+  --emerald-glow: rgba(0, 206, 89, 0.28);
+  --gold: #f2ca50;
+  --gold-deep: #c58d04;
+  --gold-glow: #fed252;
+  --blue: #4d9fe5;
+  --danger: #f36356;
+  --danger-soft: rgba(243, 99, 86, 0.12);
+  --warn: #f0a83c;
+
+  /* type */
+  --font-sans: "Geist Variable", "Geist", Inter, "Segoe UI", system-ui, sans-serif;
+  --font-display: "Manrope Variable", "Manrope", var(--font-sans);
+  --font-serif: "Instrument Serif", Georgia, "Times New Roman", serif;
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, "Cascadia Code", monospace;
+
+  /* shape */
+  --radius-sm: 4px;
+  --radius: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+
+  /* motion */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur: 220ms;
+
+  /* layout */
+  --sidebar-w: 256px;
+  --topbar-h: 64px;
+
+  color-scheme: dark;
+}
+
+:root,
+[data-theme="dark"] {
+  --bg: #050605;
+  --bg-1: #0a0c0a;
+  --bg-2: #0e1210;
+  --surface: rgba(10, 10, 10, 0.4);
+  --surface-solid: #0b0d0b;
+  --surface-raised: rgba(18, 20, 18, 0.92);
+  --text: #f4f3ec;
+  --text-mid: #b8b6a9;
+  --text-mute: #808279;
+  --line: rgba(255, 255, 255, 0.055);
+  --line-strong: rgba(255, 255, 255, 0.12);
+  --emerald-ink: var(--emerald);
+  --gold-ink: var(--gold);
+  --shadow-card: 0 4px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 206, 89, 0.02);
+  --shadow-pop: 0 24px 80px rgba(0, 0, 0, 0.6);
+  --grid-line: rgba(255, 255, 255, 0.04);
+  --hover: rgba(255, 255, 255, 0.04);
+  --active: rgba(0, 206, 89, 0.08);
+}
+
+[data-theme="light"] {
+  --bg: #f4f3ec;
+  --bg-1: #faf9f3;
+  --bg-2: #ffffff;
+  --surface: rgba(255, 255, 255, 0.82);
+  --surface-solid: #ffffff;
+  --surface-raised: rgba(255, 255, 255, 0.97);
+  --text: #17190f;
+  --text-mid: #525446;
+  --text-mute: #77786a;
+  --line: rgba(20, 24, 14, 0.09);
+  --line-strong: rgba(20, 24, 14, 0.18);
+  --emerald-ink: #067c3c;
+  --gold-ink: #8a6200;
+  --shadow-card: 0 4px 26px rgba(20, 24, 14, 0.06), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  --shadow-pop: 0 24px 70px rgba(20, 24, 14, 0.16);
+  --grid-line: rgba(20, 24, 14, 0.06);
+  --hover: rgba(20, 24, 14, 0.04);
+  --active: rgba(0, 154, 68, 0.1);
+  color-scheme: light;
+}

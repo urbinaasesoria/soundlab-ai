@@ -1,0 +1,105 @@
+/* ============================================================
+   URBINA STUDIO · marca, avisos legales y estados de carga
+   © 2026 URBINA ASESORÍA E INVERSIONES S.A.C. Todos los derechos reservados.
+   ============================================================ */
+
+/* --- aviso de copyright --- */
+
+.boot__legal,
+.sidebar__legal {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  color: var(--text-mute);
+  opacity: 0.75;
+  line-height: 1.5;
+}
+
+.boot__legal {
+  margin-top: 26px;
+  text-align: center;
+  max-width: 34ch;
+}
+
+.sidebar__legal {
+  padding: 10px 14px 4px;
+  border-top: 1px solid var(--line);
+  margin-top: 6px;
+  font-size: 9.5px;
+}
+
+/* --- carga diferida de rutas --- */
+
+.route-loading {
+  display: grid;
+  place-items: center;
+  gap: 14px;
+  min-height: 46vh;
+  color: var(--text-mute);
+  font-size: 13px;
+}
+
+/* --- página legal --- */
+
+.legal-page {
+  max-width: 860px;
+  margin: 0 auto;
+  display: grid;
+  gap: 18px;
+}
+
+.legal-block {
+  padding: 22px 24px;
+  display: grid;
+  gap: 12px;
+}
+
+.legal-block__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--gold-ink);
+}
+
+.legal-block__head h2 {
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  margin: 0;
+  color: var(--text);
+}
+
+.legal-block p {
+  font-size: 13.5px;
+  line-height: 1.72;
+  color: var(--text-mid);
+  margin: 0;
+}
+
+.legal-quote {
+  border-left: 2px solid var(--gold);
+  padding: 10px 0 10px 16px;
+  color: var(--text) !important;
+  font-size: 13px !important;
+  background: linear-gradient(90deg, rgba(242, 202, 80, 0.06), transparent 70%);
+}
+
+.legal-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 4px 40px;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+  color: var(--text-mute);
+}
+
+@media print {
+  .sidebar__legal,
+  .boot__legal,
+  .route-loading {
+    display: none !important;
+  }
+}

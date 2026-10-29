@@ -60,7 +60,7 @@ export function HomePage() {
             <Crown size={22} />
           </div>
           <div className="pro-banner__body">
-            <div className="pro-banner__title">Desbloquea todo el poder de URBINA Studio</div>
+            <div className="pro-banner__title">Desbloquea todo el poder de SoundLab AI</div>
             <p className="pro-banner__text">
               Pásate a Pro y accede a las herramientas premium, el análisis por stems y créditos que se renuevan con
               cada ciclo de tu plan.
@@ -140,6 +140,14 @@ export function HomePage() {
             {latest ? (
               <>
                 Último resultado: <b style={{ color: `var(--${latest.result.ai.zone === "optimo" ? "emerald" : latest.result.ai.zone === "riesgo" ? "gold" : latest.result.ai.zone === "peligro" ? "danger" : "emerald"})` }}>{latest.result.ai.probability.toFixed(0)}% IA</b>
+                {latest.result.isDemo && (
+                  <>
+                    {" "}
+                    <span className="chip chip--gold" style={{ fontSize: 9, padding: "1px 6px" }}>
+                      DEMO · SIN AUDIO
+                    </span>
+                  </>
+                )}
                 <br />
                 {resultHeadline(zoneFromProbability(latest.result.ai.probability))}
               </>

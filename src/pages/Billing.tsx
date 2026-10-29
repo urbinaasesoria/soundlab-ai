@@ -165,7 +165,7 @@ export function BillingPage() {
             <Crown size={22} />
           </div>
           <div className="pro-banner__body">
-            <div className="pro-banner__title">Desbloquea todo el poder de URBINA Studio</div>
+            <div className="pro-banner__title">Desbloquea todo el poder de SoundLab AI</div>
             <p className="pro-banner__text">
               Pásate a Pro y accede al escaneo profundo, más créditos y las funciones premium del producto.
             </p>

@@ -23,10 +23,11 @@ import {
 } from "../lib/data/suno";
 import { useStudio } from "../lib/storage/store";
 import { copyText } from "../lib/utils";
+import { Link } from "react-router-dom";
 
 type SunoTab = "data" | "tags" | "artists" | "prompts";
 
-const FAV_KEY = "urbina.suno.favorites.v1";
+const FAV_KEY = "soundlab.suno.favorites.v1";
 
 function loadFavorites(): string[] {
   try {
@@ -143,6 +144,17 @@ export function SunoPage() {
           Catálogo curado propio. Priorizamos fichas con datos
           verificables y prompts útiles.
         </div>
+      </div>
+
+      <div className="card pro-banner" style={{ marginBottom: 18 }}>
+        <div className="pro-banner__title">¿Prefieres que el set lo componga el motor?</div>
+        <p className="muted" style={{ fontSize: 13, lineHeight: 1.6, margin: "6px 0 0" }}>
+          El compositor aplica la metodología PRO FLOW de 5 pasos, respeta los límites reales de los campos
+          de Suno y exporta un pack con style prompt, letra estructurada, exclusiones y parámetros óptimos.
+        </p>
+        <Link to="/compositor" className="btn btn--gold btn--sm">
+          Abrir compositor
+        </Link>
       </div>
 
       <div className="suno-search-row">

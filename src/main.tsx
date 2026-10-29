@@ -8,6 +8,8 @@ import "./styles/components.css";
 import "./styles/pages.css";
 import "./styles/app.css";
 import "./styles/branding.css";
+import "./styles/premium.css";
+import "./styles/compositor.css";
 import { App } from "./App";
 
 createRoot(document.getElementById("root")!).render(

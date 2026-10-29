@@ -17,6 +17,7 @@ import {
   SlidersHorizontal,
   Sparkles,
   UserRound,
+  Wand2,
   Zap,
 } from "lucide-react";
 import { Logo } from "./Logo";
@@ -34,6 +35,7 @@ interface SidebarProps {
 
 const TOOL_LINKS = [
   { to: "/suno", label: "Prompts Suno", icon: Sparkles },
+  { to: "/compositor", label: "Compositor Suno", icon: Wand2 },
   { to: "/scan", label: "Escanear", icon: ScanLine },
   { to: "/humanizer", label: "Humanizador", icon: AudioWaveform, badge: "BETA", badgeClass: "badge--beta" },
   { to: "/forensic", label: "Análisis Forense", icon: Activity },

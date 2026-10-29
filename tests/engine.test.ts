@@ -134,7 +134,7 @@ test("analyzeTrack produce un informe completo y coherente", async () => {
   assert.ok(result.waveform.peaks.length === 900);
   assert.equal(result.spectrogram.frames.length % result.spectrogram.bands, 0);
   assert.ok(result.loudness.lufs < 0, "el loudness debe ser negativo");
-  assert.ok(result.engine.includes("URBINA") || result.engine.includes("AUDIO"));
+  assert.ok(result.engine.includes("DSP"), "el motor debe identificarse en el informe");
 });
 
 test("el resultado es reproducible para el mismo audio", async () => {

@@ -232,7 +232,7 @@ export const DEFAULT_PREFS: Prefs = {
   plan: "free",
   fullName: "Artista",
   artistName: "Artista",
-  email: "artista@urbina.studio",
+  email: "artista@soundlab.ai",
   country: "Perú",
   phone: "",
   birthDate: "",

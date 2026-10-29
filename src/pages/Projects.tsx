@@ -100,7 +100,7 @@ export function ProjectsPage() {
             <Crown size={20} />
           </div>
           <div className="pro-banner__body">
-            <div className="pro-banner__title">Desbloquea todo el poder de URBINA Studio</div>
+            <div className="pro-banner__title">Desbloquea todo el poder de SoundLab AI</div>
             <p className="pro-banner__text">
               Pásate a Pro y accede a las herramientas premium, el análisis por stems y créditos que se renuevan con
               cada ciclo de tu plan.

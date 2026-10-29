@@ -78,7 +78,7 @@ export function ProfilePage() {
 
   const exportData = () => {
     const payload = {
-      app: "URBINA Studio",
+      app: "SoundLab AI",
       exportedAt: new Date().toISOString(),
       note: "Exportación de metadatos. Los audios originales y los WAV renderizados permanecen solo en IndexedDB.",
       profile: {

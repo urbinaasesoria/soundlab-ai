@@ -17,6 +17,9 @@ const ScanPage = lazy(() => import("./pages/Scan").then((m) => ({ default: m.Sca
 const ForensicPage = lazy(() => import("./pages/Forensic").then((m) => ({ default: m.ForensicPage })));
 const HumanizerPage = lazy(() => import("./pages/Humanizer").then((m) => ({ default: m.HumanizerPage })));
 const SunoPage = lazy(() => import("./pages/Suno").then((m) => ({ default: m.SunoPage })));
+const CompositorPage = lazy(() =>
+  import("./pages/Compositor").then((m) => ({ default: m.CompositorPage })),
+);
 const ShieldPage = lazy(() => import("./pages/Shield").then((m) => ({ default: m.ShieldPage })));
 const CoverizadorPage = lazy(() =>
   import("./pages/Coverizador").then((m) => ({ default: m.CoverizadorPage })),
@@ -118,6 +121,7 @@ export function App() {
                   <Route path="forensic" element={<ForensicPage />} />
                   <Route path="humanizer" element={<HumanizerPage />} />
                   <Route path="suno" element={<SunoPage />} />
+                  <Route path="compositor" element={<CompositorPage />} />
                   <Route path="shield" element={<ShieldPage />} />
                   <Route path="coverizador" element={<CoverizadorPage />} />
                   <Route path="billing" element={<BillingPage />} />

@@ -1,5 +1,5 @@
 /**
- * Marca gráfica original de URBINA Studio.
+ * Marca gráfica original de SoundLab AI.
  * Diseño propio: cinco barras de forma de onda ascendentes inscritas en un arco.
  * Propiedad de URBINA ASESORÍA E INVERSIONES S.A.C.
  */

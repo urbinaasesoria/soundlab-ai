@@ -13,13 +13,17 @@
  */
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 
-const data = JSON.parse(readFileSync("data/dataset.json", "utf8"));
+const datasetArgIndex = process.argv.indexOf("--dataset");
+const DATASET_PATH = datasetArgIndex >= 0 ? process.argv[datasetArgIndex + 1] : "data/dataset.json";
+
+const data = JSON.parse(readFileSync(DATASET_PATH, "utf8"));
 const keys = data.featureKeys;
 const rows = data.rows;
 if (!rows?.length) {
-  console.error("data/dataset.json vacío. Ejecuta antes: npm run dataset:make");
+  console.error(`${DATASET_PATH} vacío. Ejecuta antes: npm run dataset:make  o  npm run dataset:ingest`);
   process.exit(1);
 }
+console.log(`Dataset: ${DATASET_PATH} · ${rows.length} muestras · origen: ${data.source ?? "desconocido"}`);
 
 /* ------------------------- estandarización ------------------------------ */
 

@@ -546,3 +546,96 @@ Material reproducible generado durante esta auditoría (conservado en `_audit/`,
 Documento confidencial. Propiedad exclusiva de URBINA ASESORÍA E INVERSIONES S.A.C.
 
 </div>
+
+---
+
+# 11. ESTADO DE EJECUCIÓN — actualización del 29·10·2026
+
+> Esta sección registra lo que **ya está implementado y verificado** en el repositorio, separado de lo
+> que sigue pendiente. Se ha ejecutado la Fase 0 completa, el núcleo de la Fase 1 y los elementos de
+> mayor valor de la Fase 2 que no dependían de cuentas externas.
+
+## 11.1 Resumen
+
+| Fase | Estado | Detalle |
+| --- | --- | --- |
+| **Fase 0 · Blindaje** | ✅ **Completada** | Git, licencia, marca propia, copyright, CI, tests, fuentes, error boundary |
+| **Fase 1 · Núcleo** | 🟢 **Núcleo completado** | Motor v2 reescrito, worker, señales corregidas, verificación del humanizador |
+| **Fase 1 · Calibración** | 🟡 **Tubería lista, falta dato real** | Dataset y entrenador implementados; requieren audio real etiquetado |
+| **Fase 2 · Premium** | 🟡 **Parcial** | Code-splitting, a11y de landmarks, /legal, verificación A/B de señales |
+| **Fase 3 · Negocio** | ⛔ **No iniciada** | Requiere cuentas de terceros (dominio, Stripe/Culqi, hosting, registro marcario) |
+
+## 11.2 Medición antes / después
+
+| Métrica | Antes | Ahora | Criterio |
+| --- | --- | --- | --- |
+| Discriminación sintético vs humano | **1,5 pts** (37,2 vs 35,7) | **62,6 pts** (75,6 vs 13,0) | ≥ 40 ✅ |
+| Señales con capacidad de discriminación | 6 de 10 | **7 de 8** | — |
+| Peso del índice permanentemente nulo | 28 % | **~4 %** (solo «estructura») | — |
+| Humanizador | +1,9 pts (empeoraba) | Verificación automática honesta + aviso | ✅ |
+| Tempo en click-track de 128 BPM | 85 BPM (error) | **120,0 / 128,0 BPM** exacto | ±1 ✅ |
+| «Suelo de ruido» | p10 de RMS mal etiquetado | Percentil 5 real + silencio digital | ±3 dB ✅ |
+| Bloqueo del hilo de UI al analizar | ~1,3 s por 35 s de audio | **0 ms** (Web Worker) | 0 ms ✅ |
+| Basura de memoria del FFT | ~400 MB / 4 min | Buffers reutilizados | ✅ |
+| Bundle inicial (gzip) | 169,3 kB en 1 chunk | **121,8 kB + rutas diferidas** | < 120 kB 🟡 |
+| Peso de fuentes | 358 kB (23 archivos) | **134,6 kB (5 woff2)** | < 140 kB ✅ |
+| Peso de `dist/` | 1,05 MB | **0,82 MB** | < 950 kB ✅ |
+| Tests automatizados | 0 | **15 (100 % verdes)** | ≥ 1 ✅ |
+| Referencias a la marca de terceros | 89 en 27 archivos | **0** | 0 ✅ |
+| Control de versiones | No existía | `git` con commit inicial y `.gitattributes` | ✅ |
+| Declaración de titularidad | Ausente | 8 ubicaciones + ruta `/legal` | ✅ |
+
+## 11.3 Qué se ha implementado
+
+**Identidad y titularidad**
+- `src/lib/brand.ts`: fuente única de marca, copyright, titularidad y claves de almacenamiento.
+- Logotipo y favicon **originales** (forma de onda en arco), sin relación con el diseño anterior.
+- Copyright en: `<title>`/metadatos, `package.json`, `LICENSE`, sidebar, pantalla de arranque,
+  informe imprimible, `/legal` y aviso de error.
+- Ruta `/legal` con titularidad, licencia, privacidad (Ley 29733 / RGPD) y naturaleza de los resultados.
+- Marca eliminada del producto y de las claves internas (`urbina-studio`, `urbina.prefs.v1`, exportaciones
+  JSON con clave `urbina`).
+
+**Motor v2**
+- `features.ts`: capa de medición pura con 25+ características documentadas.
+- `model.ts`: índice explicable de 8 señales con peso y contribución firmada al logit.
+- `analyzer.ts`: orquestación compatible con todas las pantallas existentes.
+- `analyzeClient.ts` + `analyzer.worker.ts`: análisis en Web Worker con cancelación por `AbortSignal` y
+  niveles de calidad (FFT 2048 rápido / FFT 4096 profundo).
+- Correcciones: piso de ruido real, borde espectral por bandas de 1/3 de octava, tempo por IOI mediano
+  con validación por autocorrelación, microtiming con refinado sub-milisegundo y residuo mediano.
+- Humanizador: verificación automática que informa qué señales mejoran, cuáles empeoran y qué no se
+  puede corregir con DSP.
+
+**Calidad e ingeniería**
+- `tests/engine.test.ts`: 15 pruebas con `node:test` y resolución de TypeScript nativa (sin bundler).
+- `tests/fixtures.ts`: señales de perfil conocido (generativo vs humano, tempo, ruido, silencio, tono).
+- `tests/diagnose.ts`: herramienta de diagnóstico de características y contribuciones.
+- `scripts/make-dataset.mjs` y `scripts/train-model.mjs`: tubería de calibración con validación AUC.
+- CI en GitHub Actions, ESLint, Prettier, `.editorconfig`, `.gitattributes`, `.gitignore`.
+- `ErrorBoundary` global, rutas con `React.lazy`, `dist/` optimizado, fuentes en woff2 latino.
+
+## 11.4 Pendiente y por qué
+
+| Pendiente | Bloqueo | Fase |
+| --- | --- | --- |
+| **Calibrar el modelo con audio real** | Requiere un dataset etiquetado real (≈300 pistas). La tubería está lista: `npm run dataset:make && npm run model:train` | 1 |
+| Registrar el nombre comercial | Trámite en INDECOPI; decisión de negocio | 0 |
+| Backend, cuentas y créditos en servidor | Requiere hosting, dominio y presupuesto | 3 |
+| Pasarela de pago (Stripe / Culqi) | Requiere cuentas verificadas y personería | 3 |
+| Anclaje de tiempo real (OpenTimestamps) | Requiere servicio e infraestructura | 3 |
+| Comparador A/B a ciegas con nivelación de loudness | Diseño e implementación (~3 d) | 2 |
+| Comparación contra referencias de género | Los datos existen en `genres.ts`; falta integrarlos en el informe | 2 |
+| PWA instalable y offline | ~1,5 d | 2 |
+| i18n ES/EN | ~2 d | 2 |
+| Limpieza: índice de tests de cobertura ≥ 70 % en `src/lib/` | ~2 d | 1 |
+
+## 11.5 Limitación conocida del índice
+
+La discriminación es sólida en los casos de control (rejilla perfecta 75,6 % frente a microtiming
+13,0 %), pero un archivo cuantizado construido con **ataques de ruido broadband** (charles y cajas muy
+procesados) mide un jitter mayor del real y queda en 40,8 % («zona segura») en lugar de «zona de
+peligro». La causa es la precisión del refinado de ataques sobre transitorios de ruido. Mejora prevista:
+refinar el ataque sobre el flujo espectral en lugar de la envolvente RMS, o usar un detector de onsets
+supervisado. **Conclusión honesta:** el índice es hoy un diagnóstico explicable, no un detector
+validado. Su activación comercial como «probabilidad de detección» exige la calibración de §11.4.

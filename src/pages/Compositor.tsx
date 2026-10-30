@@ -12,6 +12,8 @@ import {
   formatPlainText,
   formForPreset,
   KEY_SCALES,
+  LYRIC_LANGUAGES,
+  LYRIC_POVS,
   MOODS,
   MUSICAL_MODES,
   packFileName,
@@ -156,7 +158,8 @@ export function CompositorPage() {
       keyScale: form.keyScale,
       mood: MOODS.find((m) => m.id === form.moodId)?.es ?? "",
       vocal: [form.vocalGender, form.vocalTechnique, form.vocalAttitude].filter(Boolean).join(", "),
-      language: "es",
+      language: form.language,
+      pov: form.pov,
       existingLyrics: ownLyrics ? form.lyrics : "",
       mode,
       variant,
@@ -360,6 +363,48 @@ export function CompositorPage() {
                 versos: si lo dejas vacío recibirás un esqueleto de estructura.
               </span>
             </div>
+
+            <div className="form-grid">
+              <div className="field">
+                <label className="label" htmlFor="c-language">
+                  Idioma de la letra
+                </label>
+                <select
+                  id="c-language"
+                  className="select"
+                  value={form.language}
+                  onChange={(e) => set("language", e.target.value)}
+                >
+                  {LYRIC_LANGUAGES.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <span className="field__hint">Los metatags entre corchetes siguen en inglés.</span>
+              </div>
+              <div className="field">
+                <label className="label" htmlFor="c-pov">
+                  Punto de vista
+                </label>
+                <select
+                  id="c-pov"
+                  className="select"
+                  value={form.pov}
+                  onChange={(e) => set("pov", e.target.value)}
+                >
+                  {LYRIC_POVS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <span className="field__hint">
+                  Se mantiene de principio a fin; no cambia de narrador a mitad de canción.
+                </span>
+              </div>
+            </div>
+
             <label className="composer-check">
               <input
                 type="checkbox"

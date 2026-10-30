@@ -24,6 +24,16 @@ audit-output/
 data/dataset.json
 data/weights.trained.json
 
+# pistas de calibración: audio con derechos, nunca al repositorio
+# (los LEEME.md sí se versionan para que las carpetas existan en cualquier clon)
+Calibracion/**/*.wav
+Calibracion/**/*.wave
+Calibracion/**/*.aif
+Calibracion/**/*.aiff
+Calibracion/**/*.mp3
+Calibracion/**/*.m4a
+Calibracion/**/*.flac
+
 # artefactos de herramientas
 coverage/
 .vitest/

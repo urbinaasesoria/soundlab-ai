@@ -324,7 +324,11 @@ LETRA — REGLAS ESTRICTAS (manual SUNO 6.0, §2.B y §5)
 7. Máximo 5.000 caracteres. Si el usuario ya aporta letra, reescríbela conservando su idea y su métrica,
    sin cambiar el mensaje.
 8. Devuelve el stylePrompt coherente con esa letra (misma emoción y misma instrumentación).
-9. En lyricsNotes explica en una frase las decisiones de estructura. En rationale, una línea por decisión.`;
+9. En lyricsNotes explica en una frase las decisiones de estructura. En rationale, una línea por decisión.
+10. IDIOMA: escribe la letra en el idioma pedido, sin mezclar salvo que se pida spanglish. Los metatags
+    entre corchetes permanecen en inglés porque es la sintaxis que entiende el motor.
+11. PUNTO DE VISTA: respeta la persona gramatical pedida (yo / tú / él-ella / observador / nosotros) de
+    principio a fin. No cambies de narrador a mitad de la canción.`;
 
 function composeUserText(payload) {
   const {
@@ -337,6 +341,7 @@ function composeUserText(payload) {
     mood = "",
     vocal = "",
     language = "es",
+    pov = "",
     existingLyrics = "",
     mode = "create",
     variant = 1,
@@ -349,7 +354,23 @@ function composeUserText(payload) {
     keyScale ? `TONALIDAD: ${keyScale}` : "",
     mood ? `EMOCIÓN: ${mood}` : "",
     vocal ? `PERFIL VOCAL: ${vocal}` : "",
-    language ? `IDIOMA DE LA LETRA: ${language === "es" ? "español" : language}` : "",
+    language
+      ? `IDIOMA DE LA LETRA: ${
+          { es: "español", en: "inglés", pt: "portugués", "es-en": "spanglish (español con el estribillo en inglés)" }[language] ??
+          language
+        }. Los metatags entre corchetes van SIEMPRE en inglés.`
+      : "",
+    pov
+      ? `PUNTO DE VISTA NARRATIVO: ${
+          {
+            primera: "primera persona (yo), confesional y directo",
+            segunda: "segunda persona (tú), apelando a alguien concreto",
+            tercera: "tercera persona (él/ella), contando lo que le pasa a otra persona",
+            observador: "observador externo, como una cámara que describe la escena sin juzgar",
+            colectivo: "colectivo (nosotros), compartido y comunitario",
+          }[pov] ?? pov
+        }. Mantenlo de forma consistente de principio a fin; no cambies de persona a mitad de canción.`
+      : "",
     idea ? `IDEA DE PARTIDA DEL USUARIO (respétala): """${String(idea).slice(0, 2000)}"""` : "",
     existingLyrics
       ? `LETRA ACTUAL DEL USUARIO (modo ${mode === "rewrite" ? "REESCRITURA: conserva idea y métrica" : "referencia"}):\n"""${String(existingLyrics).slice(0, 4000)}"""`

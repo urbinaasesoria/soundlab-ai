@@ -29,6 +29,10 @@ export type CreativeProfile = "fiel" | "equilibrado" | "experimental";
 
 export interface CompositorForm {
   idea: string;
+  /** Idioma de la letra (los metatags siempre van en inglés). */
+  language: string;
+  /** Punto de vista narrativo de la letra. */
+  pov: string;
   /** Id del preset de género de la casa. */
   presetId: string;
   /** Matiz libre sobre el preset (opcional). */
@@ -155,8 +159,24 @@ export const VOCAL_ATTITUDES = [
   "solemn",
 ] as const;
 
+/** Idiomas admitidos para la letra. Los metatags siguen en inglés. */
+export const LYRIC_LANGUAGES = [
+  { value: "es", label: "Español" },
+  { value: "en", label: "Inglés" },
+  { value: "pt", label: "Portugués" },
+  { value: "es-en", label: "Spanglish (español con estribillo en inglés)" },
+] as const;
+
+/** Punto de vista narrativo. */
+export const LYRIC_POVS = [
+  { value: "primera", label: "Primera persona (yo)" },
+  { value: "segunda", label: "Segunda persona (tú, tú y yo)" },
+  { value: "tercera", label: "Tercera persona (él / ella)" },
+  { value: "observador", label: "Observador externo (como una cámara)" },
+  { value: "colectivo", label: "Colectivo (nosotros)" },
+] as const;
+
 export const PRODUCTION_KEYWORDS = [
-  "808 sub",
   "punchy drums",
   "dry mix",
   "reverb heavy",
@@ -208,6 +228,8 @@ const firstPreset = SUNO_PRESETS[0];
 
 export const EMPTY_FORM: CompositorForm = {
   idea: "",
+  language: "es",
+  pov: "primera",
   presetId: firstPreset.id,
   customGenre: "",
   bpm: "",

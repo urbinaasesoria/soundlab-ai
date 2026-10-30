@@ -134,11 +134,16 @@ ingeniería; con audio etiquetado se entrena una regresión logística y se vali
 
 ### 1. Prepara las carpetas
 
+Las carpetas **ya están creadas** en el proyecto, con un `LEEME.md` dentro de cada una:
+
 ```
 Calibracion/
+  LEEME.md     ← instrucciones y requisitos
   humanas/     ← pistas reales o comerciales
   ia/          ← pistas generadas con IA
 ```
+
+El audio está ignorado por git: solo se versionan los `LEEME.md`.
 
 Requisitos para que la calibración sea válida:
 

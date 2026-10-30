@@ -143,6 +143,8 @@ export async function composeSet(input: {
   mood: string;
   vocal: string;
   language?: string;
+  /** Punto de vista narrativo (primera, segunda, tercera, observador, colectivo). */
+  pov?: string;
   existingLyrics?: string;
   /** Número de intento: >1 pide un ángulo deliberadamente distinto. */
   variant?: number;

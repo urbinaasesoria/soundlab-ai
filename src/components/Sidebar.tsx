@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   Sparkles,
+  Ear,
   UserRound,
   Wand2,
   Zap,
@@ -36,11 +37,12 @@ interface SidebarProps {
 const TOOL_LINKS = [
   { to: "/suno", label: "Prompts Suno", icon: Sparkles },
   { to: "/compositor", label: "Compositor Suno", icon: Wand2 },
+  { to: "/comparador", label: "Prueba a ciegas", icon: Ear },
   { to: "/scan", label: "Escanear", icon: ScanLine },
   { to: "/humanizer", label: "Humanizador", icon: AudioWaveform, badge: "BETA", badgeClass: "badge--beta" },
   { to: "/forensic", label: "Análisis Forense", icon: Activity },
   { to: "/mix", label: "Mixing IA", icon: SlidersHorizontal, badge: "PRÓXIMAMENTE", locked: true },
-  { to: "/master", label: "Mastering IA", icon: Disc3, badge: "PRÓXIMAMENTE", locked: true },
+  { to: "/master", label: "Mastering", icon: Disc3, badge: "PRÓXIMAMENTE", locked: true },
   { to: "/shield", label: "Escudo Protector", icon: ShieldCheck },
   { to: "/coverizador", label: "Coverizador", icon: Zap, badge: "BETA", badgeClass: "badge--beta" },
 ];

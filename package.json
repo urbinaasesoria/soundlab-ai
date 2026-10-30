@@ -22,6 +22,7 @@
     "audit:deps": "npm audit --audit-level=high",
     "dataset:make": "node --import ./tests/register.mjs scripts/make-dataset.mjs",
     "dataset:ingest": "node --import ./tests/register.mjs scripts/ingest-real-audio.mjs",
+    "ai:proxy": "node --env-file=.env.local server/gemini-proxy.mjs",
     "model:train": "node scripts/train-model.mjs"
   },
   "dependencies": {

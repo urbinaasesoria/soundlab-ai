@@ -10,6 +10,7 @@ import "./styles/app.css";
 import "./styles/branding.css";
 import "./styles/premium.css";
 import "./styles/compositor.css";
+import "./styles/blind.css";
 import { App } from "./App";
 
 createRoot(document.getElementById("root")!).render(

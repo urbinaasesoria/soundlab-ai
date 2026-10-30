@@ -25,6 +25,7 @@ import {
 } from "../lib/suno/composer";
 import { PRESET_GROUPS, SUNO_PRESETS, findPreset } from "../lib/suno/presets";
 import { deriveFromAnalysis, type ReferenceDerivation } from "../lib/suno/fromAnalysis";
+import { aiConfigured, improveSet } from "../lib/ai/client";
 import { SUNO_LIMITS } from "../lib/suno/limits";
 
 const PROFILES: { id: CreativeProfile; label: string; hint: string }[] = [
@@ -38,6 +39,8 @@ export function CompositorPage() {
   const [form, setForm] = useState<CompositorForm>(EMPTY_FORM);
   const [reference, setReference] = useState<ReferenceDerivation | null>(null);
   const [refBusy, setRefBusy] = useState("");
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiNote, setAiNote] = useState<{ kind: "ok" | "err"; text: string; rationale?: string[] } | null>(null);
   const refInput = useRef<HTMLInputElement>(null);
 
   const set = <K extends keyof CompositorForm>(key: K, value: CompositorForm[K]) =>
@@ -105,6 +108,28 @@ export function CompositorPage() {
   };
 
   const result = useMemo(() => compileSet(form), [form]);
+
+  /** Copiloto opcional: solo aparece si hay proxy de IA configurado. */
+  const askAi = async () => {
+    setAiBusy(true);
+    setAiNote(null);
+    const response = await improveSet({
+      set: result.stylePrompt,
+      preset: result.presetName,
+      extras: form.idea || form.cinematic,
+    });
+    setAiBusy(false);
+    if (!response.ok || !response.suggestion) {
+      setAiNote({ kind: "err", text: response.error ?? "La IA no respondió." });
+      return;
+    }
+    set("styleOverride", response.suggestion.stylePrompt);
+    setAiNote({
+      kind: "ok",
+      text: `Propuesta aplicada con ${response.suggestion.model ?? "el modelo"}. Puedes editarla a mano o quitarla.`,
+      rationale: response.suggestion.rationale,
+    });
+  };
 
   const copy = async (text: string, label: string) => {
     try {
@@ -687,7 +712,32 @@ export function CompositorPage() {
               <button className="btn btn--soft btn--sm" onClick={exportText}>
                 Descargar texto
               </button>
+              {aiConfigured && (
+                <button className="btn btn--gold btn--sm" onClick={() => void askAi()} disabled={aiBusy}>
+                  {aiBusy ? <Loader2 size={13} className="composer-spin" /> : <Sparkles size={13} />}{" "}
+                  {aiBusy ? "Consultando…" : "Mejorar con IA"}
+                </button>
+              )}
             </div>
+
+            {aiNote && (
+              <div className={`composer-ai ${aiNote.kind === "err" ? "is-err" : ""}`}>
+                <b>{aiNote.kind === "err" ? "La IA no pudo responder" : "Copiloto aplicado"}</b>
+                <p>{aiNote.text}</p>
+                {aiNote.rationale && aiNote.rationale.length > 0 && (
+                  <ul>
+                    {aiNote.rationale.slice(0, 6).map((r) => (
+                      <li key={r}>{r}</li>
+                    ))}
+                  </ul>
+                )}
+                {aiNote.kind === "ok" && (
+                  <button className="btn btn--ghost btn--sm" onClick={() => { set("styleOverride", ""); setAiNote(null); }}>
+                    Volver al ensamblado del motor
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="card composer-why">

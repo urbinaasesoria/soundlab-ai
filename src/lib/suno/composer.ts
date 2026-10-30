@@ -48,6 +48,8 @@ export interface CompositorForm {
   instrumentalBridge: boolean;
   keepLyrics: boolean;
   lyrics: string;
+  /** Style prompt final escrito por una IA o a mano; si existe, manda sobre el ensamblado. */
+  styleOverride: string;
   profile: CreativeProfile;
   weirdness: number;
   styleInfluence: number;
@@ -223,6 +225,7 @@ export const EMPTY_FORM: CompositorForm = {
   instrumentalBridge: false,
   keepLyrics: false,
   lyrics: "",
+  styleOverride: "",
   profile: "equilibrado",
   weirdness: 28,
   styleInfluence: 80,
@@ -342,7 +345,10 @@ export function compileSet(form: CompositorForm): ProductionSet {
   if (cinematic) parts.push(`evoking ${cinematic}`);
   parts.push(technical);
 
-  const stylePrompt = fitParts(parts, SUNO_LIMITS.styleMaxChars);
+  const override = form.styleOverride.trim();
+  const stylePrompt = override
+    ? override.slice(0, SUNO_LIMITS.styleMaxChars)
+    : fitParts(parts, SUNO_LIMITS.styleMaxChars);
 
   /* ---- exclusiones: las del preset + las elegidas ---- */
   const excludeIds = unique([...preset.defaultExclusions, ...form.exclude]);

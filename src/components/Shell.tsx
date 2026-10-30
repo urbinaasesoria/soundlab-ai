@@ -56,10 +56,10 @@ export function Shell() {
         onLogout={() => setLogout(true)}
       />
       {open && <div className="backdrop" onClick={() => setOpen(false)} aria-hidden="true" />}
-      <div className="main">
+      <main className="main" id="contenido">
         <Topbar onMenu={() => setOpen(true)} />
         <Outlet />
-      </div>
+      </main>
       <Toasts />
 
       <Modal

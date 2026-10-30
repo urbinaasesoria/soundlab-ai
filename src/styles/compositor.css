@@ -469,3 +469,46 @@
 .composer-spin {
   animation: composer-spin 0.9s linear infinite;
 }
+
+/* --------------------------- copiloto IA ------------------------------ */
+
+.composer-ai {
+  display: grid;
+  gap: 8px;
+  padding: 13px 15px;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in oklab, var(--emerald) 30%, transparent);
+  background: color-mix(in oklab, var(--emerald) 6%, transparent);
+}
+
+.composer-ai.is-err {
+  border-color: color-mix(in oklab, var(--danger) 34%, transparent);
+  background: color-mix(in oklab, var(--danger) 7%, transparent);
+}
+
+.composer-ai b {
+  font-size: var(--text-sm);
+  color: var(--text);
+}
+
+.composer-ai p {
+  margin: 0;
+  font-size: var(--text-xs);
+  line-height: 1.55;
+  color: var(--text-mid);
+}
+
+.composer-ai ul {
+  margin: 0;
+  padding-left: 16px;
+  display: grid;
+  gap: 4px;
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--text-mid);
+}
+
+.composer-ai .btn {
+  justify-self: start;
+  margin-top: 2px;
+}

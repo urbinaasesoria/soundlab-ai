@@ -1,0 +1,276 @@
+/* ============================================================
+   SOUNDLAB AI — comparador a ciegas
+   © 2026 URBINA ASESORÍA E INVERSIONES S.A.C.
+   ============================================================ */
+
+.blind-load {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+@media (max-width: 760px) {
+  .blind-load {
+    grid-template-columns: 1fr;
+  }
+}
+
+.blind-slot {
+  display: grid;
+  gap: 5px;
+  padding: 20px 22px;
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--line-strong);
+  background: var(--surface);
+  cursor: pointer;
+  transition:
+    border-color var(--dur) var(--ease),
+    background var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
+}
+
+.blind-slot:hover {
+  border-color: color-mix(in oklab, var(--emerald) 45%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--emerald) 7%, transparent);
+}
+
+.blind-slot.is-loaded {
+  border-style: solid;
+  border-color: var(--line-strong);
+  background-image: var(--sheen);
+}
+
+.blind-slot svg {
+  color: var(--text-mute);
+}
+
+.blind-slot b {
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  letter-spacing: var(--tracking-normal);
+}
+
+.blind-slot span {
+  font-size: var(--text-sm);
+  color: var(--text-mute);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.blind-slot__meta {
+  font-size: var(--text-2xs) !important;
+  color: var(--text-mid) !important;
+  letter-spacing: 0.02em;
+}
+
+.blind-busy {
+  margin: 14px 0 0;
+  font-size: var(--text-xs);
+  color: var(--gold-ink);
+}
+
+.blind-hint {
+  margin-top: 18px;
+  padding: 18px 20px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.blind-hint svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--emerald-ink);
+}
+
+.blind-hint p {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.62;
+  color: var(--text-mid);
+}
+
+.blind-room {
+  margin-top: 20px;
+  padding: 24px;
+  display: grid;
+  gap: 18px;
+}
+
+.blind-room__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.blind-ab {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.blind-side {
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  padding: 30px 18px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--line-strong);
+  background: color-mix(in oklab, var(--bg) 55%, transparent);
+  color: var(--text);
+  cursor: pointer;
+  transition:
+    transform var(--dur-fast) var(--ease),
+    border-color var(--dur) var(--ease),
+    background var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
+}
+
+.blind-side b {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  letter-spacing: 0.08em;
+}
+
+.blind-side span {
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-caps);
+  color: var(--text-mute);
+}
+
+.blind-side:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-2px);
+}
+
+.blind-side.is-active {
+  border-color: color-mix(in oklab, var(--emerald) 55%, transparent);
+  background: color-mix(in oklab, var(--emerald) 8%, transparent);
+  box-shadow: 0 0 0 5px color-mix(in oklab, var(--emerald) 8%, transparent);
+}
+
+.blind-side.is-active span {
+  color: var(--emerald-ink);
+}
+
+.blind-room__tip {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-mute);
+  line-height: 1.6;
+}
+
+.blind-vote {
+  display: grid;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.blind-vote > span {
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-caps);
+  color: var(--text-mute);
+}
+
+.blind-vote > div {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.blind-reveal {
+  display: flex;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in oklab, var(--gold) 32%, transparent);
+  background: color-mix(in oklab, var(--gold) 7%, transparent);
+}
+
+.blind-reveal svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--gold-ink);
+}
+
+.blind-reveal b {
+  font-size: var(--text-sm);
+  color: var(--text);
+}
+
+.blind-reveal p {
+  margin: 6px 0 12px;
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  color: var(--text-mid);
+}
+
+.blind-stats {
+  margin-top: 18px;
+  padding: 20px 22px;
+  display: grid;
+  gap: 14px;
+}
+
+.blind-stats__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.blind-stats__head b {
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+}
+
+.blind-stats__head span {
+  margin-left: auto;
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-mute);
+}
+
+.blind-bar {
+  position: relative;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--line);
+  overflow: hidden;
+}
+
+.blind-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--emerald), var(--gold));
+  transition: width var(--dur-slow) var(--ease);
+}
+
+.blind-bar i {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 1px;
+  background: var(--text-mute);
+  opacity: 0.7;
+}
+
+.blind-stats__text {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.66;
+  color: var(--text);
+}
+
+.blind-stats__note {
+  margin: 0;
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  color: var(--text-mute);
+}

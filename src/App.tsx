@@ -20,6 +20,9 @@ const SunoPage = lazy(() => import("./pages/Suno").then((m) => ({ default: m.Sun
 const CompositorPage = lazy(() =>
   import("./pages/Compositor").then((m) => ({ default: m.CompositorPage })),
 );
+const BlindTestPage = lazy(() =>
+  import("./pages/BlindTest").then((m) => ({ default: m.BlindTestPage })),
+);
 const ShieldPage = lazy(() => import("./pages/Shield").then((m) => ({ default: m.ShieldPage })));
 const CoverizadorPage = lazy(() =>
   import("./pages/Coverizador").then((m) => ({ default: m.CoverizadorPage })),
@@ -122,6 +125,7 @@ export function App() {
                   <Route path="humanizer" element={<HumanizerPage />} />
                   <Route path="suno" element={<SunoPage />} />
                   <Route path="compositor" element={<CompositorPage />} />
+                  <Route path="comparador" element={<BlindTestPage />} />
                   <Route path="shield" element={<ShieldPage />} />
                   <Route path="coverizador" element={<CoverizadorPage />} />
                   <Route path="billing" element={<BillingPage />} />

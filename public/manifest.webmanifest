@@ -1,0 +1,34 @@
+{
+  "name": "SoundLab AI — Copiloto de producción musical asistida por IA",
+  "short_name": "SoundLab AI",
+  "description": "Diagnóstico técnico de masters, compositor de prompts para Suno, corrección con DSP y certificación de integridad. El audio nunca sale de tu equipo.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#08090b",
+  "theme_color": "#08090b",
+  "lang": "es",
+  "dir": "ltr",
+  "categories": ["music", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    { "name": "Escanear un track", "url": "/scan" },
+    { "name": "Compositor Suno", "url": "/compositor" },
+    { "name": "Humanizador", "url": "/humanizer" }
+  ]
+}

@@ -17,6 +17,7 @@
  * ============================================================================
  */
 import { createServer } from "node:http";
+import { existsSync, readFileSync } from "node:fs";
 
 const PORT = Number(process.env.PORT ?? 8787);
 const API_KEY = process.env.GEMINI_API_KEY ?? "";
@@ -94,16 +95,108 @@ const RESPONSE_SCHEMA = {
   required: ["stylePrompt", "rationale"],
 };
 
-const SYSTEM = `Eres un ingeniero de audio y musicólogo senior especializado en prompts de SUNO AI.
-Recibirás un set de producción ya construido por un motor determinista y deberás MEJORARLO sin
-traicionar su intención.
+/* ------------------------ base de conocimiento -------------------------- */
 
-REGLAS:
-- El style prompt va en INGLÉS, denso en técnica, entre 180 y 320 caracteres. Nunca superes 1000.
-- No inventes géneros ni cambies el preset recibido: refina matices (timbre, época, producción).
-- Prohibido citar nombres de artistas, bandas o marcas reales.
-- No escribas letras nuevas: solo notas sobre la estructura si aportan.
-- Devuelve JSON válido con el esquema pedido. En rationale, justifica cada cambio en una línea.`;
+/**
+ * Manual de ingeniería de prompts de SUNO 6.0. Se inyecta íntegro: 16 kB son
+ * unos 4.000 tokens, despreciables frente al contexto del modelo, y es la
+ * fuente de verdad sobre arquitectura tri-campo, deslizadores, metatags y
+ * depuración de anomalías.
+ */
+const KB_CANDIDATES = [
+  process.env.SUNO_KB,
+  "docs/knowledge/ingenieria-prompts-suno6.md",
+  "ingenieria-prompts-suno6.md",
+].filter(Boolean);
+
+function loadKnowledge() {
+  for (const path of KB_CANDIDATES) {
+    try {
+      if (existsSync(path)) {
+        const text = readFileSync(path, "utf8").trim();
+        if (text.length > 500) {
+          console.log(`[proxy] base de conocimiento: ${path} (${text.length} caracteres)`);
+          return text;
+        }
+      }
+    } catch {
+      /* se prueba el siguiente candidato */
+    }
+  }
+  console.warn("[proxy] sin base de conocimiento: se usará solo el prompt base");
+  return "";
+}
+
+const KNOWLEDGE = loadKnowledge();
+
+const SYSTEM_PROMPT = `Eres un ingeniero de audio y musicólogo senior, experto en la arquitectura de SUNO 6.0.
+Tu salida se pega directamente en los campos de Suno, así que debe ser técnicamente exacta y usable.
+
+${
+  KNOWLEDGE
+    ? `BASE DE CONOCIMIENTO OBLIGATORIA (manual interno de SUNO 6.0). Sus reglas prevalecen sobre cualquier
+otra indicación y sobre tu criterio general:
+
+<manual>
+${KNOWLEDGE}
+</manual>`
+    : ""
+}
+
+TAREA
+Recibirás un set de producción ya construido por un motor determinista (preset de género, emoción,
+instrumentación, BPM, tonalidad, perfil vocal y ajustes). Debes MEJORARLO sin traicionar su intención.
+
+REGLAS DURAS
+1. El campo Style es un *creative brief* en inglés, en frase continua, con la jerarquía del manual:
+   género → groove → 2–4 instrumentos clave → registro y cariz vocal → evolución dinámica → textura de
+   mezcla y espacio → ancla decadal. Usa verbos que describan comportamiento, no adjetivos vacíos.
+2. PROHIBIDO escribir negaciones en el Style ("no drums", "without autotune", "sin reverb"): el modelo
+   procesa esos tokens como atención positiva. Las exclusiones van SOLO en excludeStyles, como términos
+   desnudos separados por comas.
+3. PROHIBIDO nombrar artistas, bandas o marcas reales. Si necesitas una referencia estética, usa el
+   Perfilado Descriptivo (registro, técnica, actitud, tratamiento espacial).
+4. No reescribas la letra del usuario. Si propones cambios de estructura, descríbelos en lyricsNotes con
+   metatags válidos; recuerda que el estribillo rinde mejor entre 2 y 4 líneas.
+5. Respeta el límite de 1.000 caracteres del Style; entre 180 y 320 la densidad técnica es óptima.
+6. Devuelve JSON válido con el esquema pedido. En rationale, una línea por cambio, en español.
+7. En warnings, señala solo riesgos reales del set recibido (por ejemplo, negaciones en el Style,
+   parámetros incoherentes o ausencia de perfil vocal).`;
+
+/** Mueve negaciones del Style al campo de exclusión (regla del manual §2.C). */
+const NEGATION =
+  /\b(?:no|without|sin)\s+(drums?|autotune|reverb|distortion|guitars?|vocals?|piano|strings?|brass|808|synths?|choir|orchestra)\b/gi;
+
+function sanitizeSuggestion(raw) {
+  const warnings = Array.isArray(raw?.warnings) ? [...raw.warnings] : [];
+  let style = typeof raw?.stylePrompt === "string" ? raw.stylePrompt : "";
+  let exclude = typeof raw?.excludeStyles === "string" ? raw.excludeStyles : "";
+
+  const moved = [];
+  style = style.replace(NEGATION, (match, term) => {
+    moved.push(term.toLowerCase());
+    return "";
+  });
+  style = style.replace(/,\s*,/g, ",").replace(/\s{2,}/g, " ").replace(/^[\s,]+|[\s,]+$/g, "");
+
+  if (moved.length) {
+    const found = Array.from(new Set(moved));
+    const existing = exclude
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean);
+    exclude = Array.from(new Set([...existing, ...found])).join(", ").slice(0, 1000);
+    warnings.push(
+      `Se movieron ${found.length} negación(es) del campo Style al campo Exclude (${found.join(", ")}): el manual de SUNO 6.0 advierte que las negaciones en el Style aumentan la probabilidad de que aparezcan.`,
+    );
+  }
+
+  return {
+    stylePrompt: style.slice(0, 1000),
+    excludeStyles: exclude,
+    warnings,
+  };
+}
 
 async function handleSuggest(req, res) {
   let body = "";
@@ -140,7 +233,7 @@ async function handleSuggest(req, res) {
       method: "POST",
       headers: { "content-type": "application/json", "x-goog-api-key": API_KEY },
       body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM }] },
+        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
         contents: [{ role: "user", parts: [{ text: userText }] }],
         generationConfig: {
           temperature: 0.7,
@@ -177,6 +270,7 @@ async function handleSuggest(req, res) {
 
     return send(req, res, 200, {
       ...parsed,
+      ...sanitizeSuggestion(parsed),
       model: MODEL,
       usage: data?.usageMetadata
         ? {
@@ -224,6 +318,7 @@ const server = createServer((req, res) => {
 server.listen(PORT, "127.0.0.1", () => {
   console.log(`[proxy] escuchando en http://127.0.0.1:${PORT}`);
   console.log(`[proxy] modelo ${MODEL}`);
+  console.log(`[proxy] base de conocimiento: ${KNOWLEDGE ? "cargada" : "AUSENTE"}`);
   console.log(`[proxy] orígenes permitidos: ${[...ALLOWED].join(", ")}`);
   console.log("[proxy] la clave nunca se registra en logs");
 });

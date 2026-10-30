@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { BRAND } from "../lib/brand";
+import { GenreReference } from "../components/GenreReference";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -331,6 +332,10 @@ export function ReportPage() {
               </div>
             </div>
           )}
+        </section>
+
+        <section className="report-section">
+          <GenreReference result={scan.result} />
         </section>
 
         <section className="report-section report-section--trace">

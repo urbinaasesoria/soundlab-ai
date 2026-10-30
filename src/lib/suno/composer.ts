@@ -183,22 +183,22 @@ export const EXCLUSIONS = [
 const PROFILES: Record<CreativeProfile, { weirdness: number; styleInfluence: number; terms: string[]; note: string }> =
   {
     fiel: {
-      weirdness: 12,
-      styleInfluence: 92,
+      weirdness: 30,
+      styleInfluence: 90,
       terms: ["transparent bus compression", "gentle tape saturation"],
-      note: "Perfil fiel: máxima obediencia al style prompt. Ideal cuando ya tienes claro el sonido.",
+      note: "Perfil fiel (manual SUNO 6.0: Style Influence 70–90 %, Weirdness 30–50). Máxima obediencia al brief.",
     },
     equilibrado: {
-      weirdness: 28,
+      weirdness: 40,
       styleInfluence: 80,
       terms: ["sidechain compression", "wide stereo image"],
-      note: "Perfil equilibrado: respeta el estilo y deja margen creativo al modelo.",
+      note: "Perfil equilibrado: respeta el estilo y deja margen creativo dentro del rango recomendado por el manual.",
     },
     experimental: {
-      weirdness: 58,
+      weirdness: 55,
       styleInfluence: 62,
       terms: ["creative bus distortion", "generative modulation"],
-      note: "Perfil experimental: más libertad del modelo. Útil para buscar ángulos nuevos.",
+      note: "Perfil experimental: por encima de Weirdness 50 el manual advierte dispersión tímbrica y artefactos.",
     },
   };
 
@@ -227,7 +227,7 @@ export const EMPTY_FORM: CompositorForm = {
   lyrics: "",
   styleOverride: "",
   profile: "equilibrado",
-  weirdness: 28,
+  weirdness: 40,
   styleInfluence: 80,
 };
 
@@ -381,6 +381,8 @@ export function compileSet(form: CompositorForm): ProductionSet {
     "",
     "[Outro]",
     `(${preset.structureHint})`,
+    "",
+    "[End]",
   ].join("\n");
 
   let lyrics = form.lyrics.trim() ? form.lyrics : scaffold;
@@ -400,10 +402,14 @@ export function compileSet(form: CompositorForm): ProductionSet {
     profile.note,
     `Estilo base del preset «${preset.name}»: ${preset.instruments.join(", ")}. BPM de referencia ${preset.bpmLabel}.`,
     preset.structureHint,
+    "Variety a 0 (Off): el manual de SUNO 6.0 confirma que con cualquier otro valor el sistema reescribe el brief antes de generar y deja de respetarlo.",
+    `Style Influence ${profile.styleInfluence} % y Weirdness ${profile.weirdness}: el rango recomendado es 70–90 % y 30–50 para conservar coherencia de género.`,
+    "Cierra la letra con [End] para impedir que el motor añada relleno instrumental tras el final natural.",
+    "Nada de negaciones en el campo Style («no drums», «without autotune»): se procesan como atención positiva. Van en Exclude Styles.",
     "El campo style va en inglés y admite 1000 caracteres; la densidad técnica importa más que la longitud. La letra va aparte.",
     "Nunca escribas nombres de artistas reales en los campos de Suno: el modelo los ignora y puede contaminar el estilo.",
     form.maxMode
-      ? "MAX MODE añade los bloques de acondicionamiento: úsalo solo cuando necesites fidelidad de instrumento real."
+      ? "MAX MODE añade los bloques de acondicionamiento: el manual lo indica en piezas de más de 2 minutos, transferencias de estilo y renders finales."
       : "Si el resultado suena genérico, sube Weirdness en pasos de 10 antes de reescribir el prompt.",
   ];
 
@@ -480,6 +486,8 @@ export interface SunoPack {
   lyrics: string;
   weirdness: number;
   styleInfluence: number;
+  /** El manual de SUNO 6.0 exige Variety en 0 con briefs detallados. */
+  variety: number;
   engineerNotes: string[];
   checks: PackChecks;
 }
@@ -497,6 +505,7 @@ export function buildPack(set: ProductionSet): SunoPack {
     lyrics: set.lyrics,
     weirdness: set.weirdness,
     styleInfluence: set.styleInfluence,
+    variety: 0,
     engineerNotes: set.engineerNotes,
     checks: set.checks,
   };
@@ -515,7 +524,7 @@ export function formatPlainText(set: ProductionSet): string {
     "EXCLUDE STYLES:",
     set.excludeStyles || "(ninguno)",
     "",
-    `WEIRDNESS: ${set.weirdness}   |   STYLE INFLUENCE: ${set.styleInfluence}`,
+    `VARIETY: 0 (Off)   |   WEIRDNESS: ${set.weirdness}   |   STYLE INFLUENCE: ${set.styleInfluence}`,
     "",
     `LETRA (${set.checks.lyricsChars}/${set.checks.lyricsLimit} caracteres):`,
     set.lyrics,

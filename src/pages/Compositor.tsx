@@ -53,8 +53,8 @@ export function CompositorPage() {
     });
 
   const applyProfile = (id: CreativeProfile) => {
-    const weirdness = id === "fiel" ? 12 : id === "equilibrado" ? 28 : 58;
-    const styleInfluence = id === "fiel" ? 92 : id === "equilibrado" ? 80 : 62;
+    const weirdness = id === "fiel" ? 30 : id === "equilibrado" ? 40 : 55;
+    const styleInfluence = id === "fiel" ? 90 : id === "equilibrado" ? 80 : 62;
     setForm((prev) => ({ ...prev, profile: id, weirdness, styleInfluence }));
   };
 

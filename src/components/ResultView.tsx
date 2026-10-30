@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { GenreReference } from "./GenreReference";
 import { Link } from "react-router-dom";
 import {
   AlertTriangle,
@@ -409,6 +410,8 @@ export function ResultView({ result, scan, onForensic }: ResultViewProps) {
 
       {tab === "loudness" && (
         <div className="result-panel stack-4">
+          <GenreReference result={result} />
+
           <div className="report-grid">
             <div className="chart-card">
               <div className="chart-head">

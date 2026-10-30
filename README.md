@@ -96,6 +96,18 @@ cuando un valor no es fiable (por ejemplo, un tempo fuera de todos los rangos). 
 El compositor es **determinista y local**, sin coste por uso. La IA se reserva para lo que el DSP no puede
 dar: redactar y reescribir prompts, generar borradores de letra y transcribir demos.
 
+La IA del compositor **no improvisa**: el proxy inyecta como base de conocimiento obligatoria el
+**[manual de ingeniería de prompts de SUNO 6.0](docs/knowledge/ingenieria-prompts-suno6.md)** (arquitectura
+tri-campo, calibración de deslizadores, perfilado vocal descriptivo, metatags y matriz de depuración). De
+ahí salen tres reglas que el sistema aplica de verdad, no solo en el papel:
+
+- **Sin negaciones en el campo Style**: el manual advierte que «no drums» aumenta la probabilidad de que
+  aparezcan. El proxy detecta negaciones en la respuesta del modelo y las mueve a `Exclude Styles`.
+- **Variety siempre en 0** y `Style Influence` 70–90 %: cualquier otro valor hace que Suno reescriba el
+  brief antes de generar.
+- **Límites reales de v6**: 1.000 caracteres de estilo, 1.000 de exclusiones y **5.000 de letra**, con el
+  estribillo entre 2 y 4 líneas y cierre `[End]`.
+
 La evaluación completa de proveedores —Gemini, Claude, Whisper, Demucs, RoEx, Stable Audio, con costes y
 recomendación por función— está en **[docs/IA-MODELOS.md](./docs/IA-MODELOS.md)**. Resumen:
 **Gemini Flash** por defecto, **Claude Sonnet** en Pro, **Whisper y Demucs** autoalojados, **RoEx** solo

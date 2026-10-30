@@ -291,7 +291,42 @@ export function CoverizadorPage() {
           </div>
 
           {!file || phase === "error" ? (
-            <div className="cover-drop-card">
+            <>
+            <div className="card cover-suno">
+        <div className="cover-suno__head">
+          <b>Preparado para subir a SUNO</b>
+        </div>
+        <p>
+          El objetivo de esta pantalla es entregar una versión <b>suficientemente transformada</b> de tu
+          track para usarla como audio de referencia en SUNO y generar un cover. Las tres
+          reinterpretaciones conservan tempo, tonalidad y estructura, pero cambian timbre, saturación y
+          espacialidad: son otro audio, no una copia.
+        </p>
+        <ul>
+          <li>
+            <b>Formato:</b> WAV 24 bits estéreo, sin recodificación con pérdida. Es el formato que SUNO
+            acepta mejor como referencia.
+          </li>
+          <li>
+            <b>Duración:</b> por debajo de ~2 minutos el cover conserva más detalle; corta un fragmento
+            representativo si el tema es largo.
+          </li>
+          <li>
+            <b>Nivel:</b> mantén los picos por debajo de −1 dBTP. Las cadenas ya atenúan el master antes de
+            escribir el archivo.
+          </li>
+          <li>
+            <b>Transformación:</b> cada estilo cambia textura y color, nunca la melodía ni el tempo, para que
+            el cover siga reconociéndose como tu tema.
+          </li>
+        </ul>
+        <p className="cover-suno__legal">
+          Sube solo audio del que tengas derechos. Esta herramienta transforma el sonido, no la
+          titularidad: no evita la detección de contenido de terceros ni te exime de sus condiciones.
+        </p>
+      </div>
+
+      <div className="cover-drop-card">
               <div className="cover-drop-card__head">
                 <span className="eyebrow">ARCHIVO</span>
                 <span className="chip">MÁX. 180 MB · 6:00</span>
@@ -308,6 +343,7 @@ export function CoverizadorPage() {
                 <span>TU AUDIO ES PRIVADO · SOLO TÚ PUEDES ACCEDER A ÉL</span>
               </div>
             </div>
+            </>
           ) : phase === "decoding" ? (
             <div className="cover-loading">
               <span className="spinner spinner--lg" />

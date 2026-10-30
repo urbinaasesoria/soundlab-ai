@@ -106,6 +106,62 @@ samp {
   font-variant-numeric: lining-nums tabular-nums;
 }
 
+/* ------------------- contraste de controles nativos -------------------- */
+
+/*
+ * Sin esto, en tema oscuro el desplegable nativo hereda fondo transparente y
+ * el texto claro se vuelve invisible: solo se lee al pasar el ratón, porque el
+ * resaltado del sistema pinta el fondo. Se fijan fondo y color explícitos.
+ */
+select,
+.select {
+  color: var(--text);
+  background-color: var(--surface-solid);
+}
+
+select option,
+.select option {
+  background-color: var(--surface-solid);
+  color: var(--text);
+}
+
+select optgroup,
+.select optgroup {
+  background-color: var(--surface-solid);
+  color: var(--text-mid);
+  font-weight: 600;
+}
+
+/* Filtros y pestañas: color base legible, no solo al pasar el ratón. */
+.shell .pill {
+  color: var(--text-mid);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+}
+
+.shell .pill:hover {
+  color: var(--text);
+  border-color: var(--line-strong);
+}
+
+.shell .pill--active {
+  color: var(--text);
+  border-color: color-mix(in oklab, var(--emerald) 48%, transparent);
+  background: color-mix(in oklab, var(--emerald) 13%, transparent);
+}
+
+.shell .tab {
+  color: var(--text-mid);
+}
+
+.shell .tab:hover {
+  color: var(--text);
+}
+
+.shell .tab--active {
+  color: var(--text);
+}
+
 /* --------------------------- armazón ---------------------------- */
 
 .shell .sidebar {

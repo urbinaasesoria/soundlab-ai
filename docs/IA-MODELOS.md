@@ -194,3 +194,35 @@ Navegador ──(texto / clip corto con consentimiento)──▶ Proxy propio �
 Todo lo demás —análisis, corrección, humanización, covers, certificación— **ya funciona sin IA** y debe
 seguir funcionando así. La IA es el copiloto, no el motor: si mañana sube de precio o desaparece, el
 producto sigue en pie.
+
+---
+
+## 8. Otras funciones que se pueden optimizar con IA (evaluación)
+
+Ordenadas por **valor percibido frente a coste de implementación**. Las tres primeras se pueden construir
+sobre el proxy que ya existe; las demás necesitan infraestructura o licencias.
+
+| # | Función | Qué aporta | Coste por uso | Esfuerzo | Prioridad |
+|---|---|---|---|---|---|
+| 1 | **Informe narrado** | Un LLM lee el JSON del informe y lo explica en lenguaje natural: «tu máster está 4 LU por encima del estándar de balada; el problema no es el loudness sino que ya no respira» + plan de acción priorizado | ~0,002 USD | Bajo (1–2 d) | **Alta** |
+| 2 | **Letras y sets completos** | Ya implementado: de una idea a letra + style prompt coherentes | ~0,004 USD | Hecho | Alta |
+| 3 | **Reescritura de prompts que fallan** | El usuario dice «el cover sonó genérico»; la IA diagnostica con la matriz del manual §6 y propone correcciones concretas | ~0,002 USD | Bajo (1 d) | **Alta** |
+| 4 | **Comparación semántica con referencias** | Gemini describe una referencia («suena a balada 80, voz al frente»), no solo sus números | Bajo (clips ≤30 s) | Medio (2 d) | Media |
+| 5 | **Detección de similitud / riesgo de plagio** | Embeddings CLAP o MERT para avisar de parecido con el catálogo de referencia | Infraestructura GPU | Alto (1 semana) | Media |
+| 6 | **Transcripción de demos** | Whisper convierte un tarareo o una toma de voz en letra editable | ~0 autoalojado | Medio (3 d) | Media |
+| 7 | **Stems y rebalanceo** | Demucs separa voz/batería/bajo para trabajar el máster por partes | GPU | Alto | Media |
+| 8 | **Auto-etiquetado del catálogo** | Embeddings + clustering para clasificar por género y mood los temas del usuario | Bajo | Medio | Baja |
+| 9 | **Soporte conversacional** | Chat con la documentación del producto como contexto | Bajo | Bajo | Baja |
+| 10 | **QA por lotes** | Analizar 50 másters y devolver un informe ejecutivo comparativo | Por volumen | Medio | Baja |
+
+### Recomendación concreta
+
+Empezar por el **informe narrado (1)**. Es la función que más valor percibido añade por euro invertido:
+reutiliza el proxy, el coste es de milésimas, y convierte un panel de métricas en un consejo accionable —
+que es exactamente el salto de «herramienta» a «copiloto».
+
+Después, la **(3) reescritura de prompts que fallan**: cierra el bucle del compositor con el manual §6
+(matriz de diagnóstico) y evita que el usuario tenga que entender la teoría para corregir un cover.
+
+Las funciones 5, 7 y 8 deben esperar a que haya volumen: su coste es de infraestructura, no de tokens, y
+hoy no están justificadas.

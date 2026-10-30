@@ -13,12 +13,12 @@ export interface SunoGenre {
 }
 
 export const SUNO_GROUPS = [
-  { id: "pop", label: "Pop & Mainstream" },
-  { id: "rock", label: "Rock & Alternative" },
-  { id: "electronic", label: "Electronic / EDM" },
-  { id: "urban", label: "Hip-Hop & Urban" },
-  { id: "latin", label: "Latin & Global" },
-  { id: "soul", label: "Soul, Jazz & Experimental" },
+  { id: "pop", label: "Pop y mainstream" },
+  { id: "rock", label: "Rock y alternativa" },
+  { id: "electronic", label: "Electrónica / EDM" },
+  { id: "urban", label: "Hip-hop y urbano" },
+  { id: "latin", label: "Latino y global" },
+  { id: "soul", label: "Soul, jazz y experimental" },
 ] as const;
 
 export const SUNO_GENRES: SunoGenre[] = [

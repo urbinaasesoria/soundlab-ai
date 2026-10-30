@@ -344,6 +344,124 @@
   color: var(--text-mute);
 }
 
+/* ------------------- coverizador · preparación SUNO --------------------- */
+
+.cover-suno {
+  margin: 18px 0;
+  padding: 18px 20px;
+  display: grid;
+  gap: 10px;
+  border-color: color-mix(in oklab, var(--gold) 24%, var(--line));
+  background-image:
+    linear-gradient(120deg, color-mix(in oklab, var(--gold) 5%, transparent), transparent 60%),
+    var(--sheen);
+}
+
+.cover-suno__head b {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  letter-spacing: var(--tracking-normal);
+  color: var(--text);
+}
+
+.cover-suno p {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.62;
+  color: var(--text-mid);
+}
+
+.cover-suno ul {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  color: var(--text-mid);
+}
+
+.cover-suno ul b {
+  color: var(--text);
+}
+
+.cover-suno__legal {
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: var(--text-xs) !important;
+  color: var(--text-mute) !important;
+}
+
+/* ------------------------- presets en el catálogo ----------------------- */
+
+.suno-presets {
+  margin: 18px 0 6px;
+}
+
+.suno-presets__toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.suno-presets__grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 12px;
+}
+
+.suno-preset {
+  padding: 16px 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.suno-preset__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.suno-preset__head b {
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  color: var(--text);
+}
+
+.suno-preset__head span {
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  color: var(--gold-ink);
+}
+
+.suno-preset__text {
+  margin: 0;
+  font-size: var(--text-xs);
+  line-height: 1.62;
+  color: var(--text-mid);
+  background: color-mix(in oklab, var(--bg) 55%, transparent);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+}
+
+.suno-preset__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.suno-preset__inst {
+  font-size: var(--text-2xs);
+  color: var(--text-mute);
+  line-height: 1.5;
+}
+
 /* ---------------------- referencia analizada (DSP) ---------------------- */
 
 .composer-ref {

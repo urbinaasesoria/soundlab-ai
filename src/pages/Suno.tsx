@@ -24,6 +24,7 @@ import {
 import { useStudio } from "../lib/storage/store";
 import { copyText } from "../lib/utils";
 import { Link } from "react-router-dom";
+import { SUNO_PRESETS } from "../lib/suno/presets";
 
 type SunoTab = "data" | "tags" | "artists" | "prompts";
 
@@ -61,6 +62,8 @@ export function SunoPage() {
   }, [favorites]);
 
   const searching = query.trim().length > 0;
+  const [showPresets, setShowPresets] = useState(false);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return SUNO_GENRES.filter((g) => {
@@ -80,7 +83,7 @@ export function SunoPage() {
   const selected: SunoGenre =
     filtered.find((g) => g.id === selectedId) ?? filtered[0] ?? SUNO_GENRES.find((g) => g.id === selectedId) ?? SUNO_GENRES[0];
 
-  const promptCount = SUNO_GENRES.reduce((acc, g) => acc + g.prompts.length, 0);
+  const promptCount = SUNO_GENRES.reduce((acc, g) => acc + g.prompts.length, SUNO_PRESETS.length);
   const groupLabel = SUNO_GROUPS.find((g) => g.id === selected.group)?.label ?? selected.group;
   const favorite = favorites.includes(selected.id);
 
@@ -191,6 +194,43 @@ export function SunoPage() {
             {g.label}
           </button>
         ))}
+      </div>
+
+      <div className="suno-presets">
+        <div className="suno-presets__toggle">
+          <button className="btn btn--soft btn--sm" onClick={() => setShowPresets((prev) => !prev)}>
+            {showPresets ? "Ocultar" : "Ver"} los {SUNO_PRESETS.length} presets de producción
+          </button>
+          <span className="chart-note">
+            Estilos base ya optimizados (en inglés) que usa el compositor como columna vertebral
+          </span>
+        </div>
+
+        {showPresets && (
+          <div className="suno-presets__grid">
+            {SUNO_PRESETS.map((preset) => (
+              <div className="card suno-preset" key={preset.id}>
+                <div className="suno-preset__head">
+                  <b>{preset.name}</b>
+                  <span className="mono">{preset.bpmLabel} BPM</span>
+                </div>
+                <p className="suno-preset__text">{preset.styleBase}</p>
+                <div className="suno-preset__foot">
+                  <span className="suno-preset__inst">{preset.instruments.join(" · ")}</span>
+                  <button
+                    className="btn btn--ghost btn--sm"
+                    onClick={async () => {
+                      const ok = await copyText(preset.styleBase);
+                      toast(ok ? `Prompt de «${preset.name}» copiado.` : "No se pudo copiar.", ok ? "ok" : "err");
+                    }}
+                  >
+                    Copiar prompt
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="suno-layout">

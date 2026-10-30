@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { BRAND } from "../lib/brand";
 import { GenreReference } from "../components/GenreReference";
+import { NarratePanel } from "../components/NarratePanel";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -127,6 +128,7 @@ export function ReportPage() {
       </div>
 
       <main className="report-sheet">
+        <NarratePanel result={scan.result} />
         <header className="report-head">
           <div className="report-head__brand">
             <Logo size={48} glow={false} />

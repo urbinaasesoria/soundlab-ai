@@ -392,6 +392,233 @@
   color: var(--text-mute) !important;
 }
 
+/* ------------------- coverizador · carácter creativo -------------------- */
+
+.cover-character {
+  margin: 16px 0;
+  padding: 16px 18px;
+  display: grid;
+  gap: 12px;
+}
+
+.cover-character__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px 18px;
+}
+
+.cover-character__field {
+  display: grid;
+  gap: 6px;
+}
+
+.cover-character__field span {
+  font-size: var(--text-xs);
+  color: var(--text-mid);
+  letter-spacing: var(--tracking-normal);
+}
+
+.cover-character__field input[type="range"] {
+  width: 100%;
+  accent-color: var(--gold);
+}
+
+.cover-character__hint {
+  margin: 0;
+  font-size: var(--text-xs);
+  line-height: 1.55;
+  color: var(--text-mute);
+}
+
+/* ------------------ catálogo · presets como principales ----------------- */
+
+.suno-presets-panel {
+  margin: 18px 0;
+  padding: 18px 20px;
+  display: grid;
+  gap: 14px;
+}
+
+.suno-presets-panel.is-prime {
+  border-color: color-mix(in oklab, var(--gold) 32%, var(--line));
+}
+
+.suno-presets__intro {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: var(--text-mid);
+  max-width: 78ch;
+}
+
+.suno-preset__actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* --------------------------- informe narrado ---------------------------- */
+
+.narrate-panel {
+  margin: 0 0 18px;
+  padding: 18px 20px;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in oklab, var(--gold) 28%, var(--line));
+  background-image:
+    linear-gradient(120deg, color-mix(in oklab, var(--gold) 6%, transparent), transparent 62%),
+    var(--sheen);
+  display: grid;
+  gap: 14px;
+}
+
+.narrate-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.narrate-panel__head b {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  color: var(--text);
+}
+
+.narrate-panel__error {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--danger);
+}
+
+.narrate-body {
+  display: grid;
+  gap: 14px;
+}
+
+.narrate-body__headline {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  letter-spacing: var(--tracking-tight);
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.narrate-body__summary {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.7;
+  color: var(--text-mid);
+}
+
+.narrate-block {
+  display: grid;
+  gap: 8px;
+}
+
+.narrate-block > span {
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-caps);
+  color: var(--text-mute);
+}
+
+.narrate-findings {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.narrate-findings li {
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--line-strong);
+  background: color-mix(in oklab, var(--bg) 45%, transparent);
+}
+
+.narrate-findings li.is-high {
+  border-left-color: var(--danger);
+}
+
+.narrate-findings li.is-mid {
+  border-left-color: var(--gold);
+}
+
+.narrate-findings li.is-low {
+  border-left-color: var(--emerald);
+}
+
+.narrate-findings b {
+  font-size: var(--text-sm);
+  color: var(--text);
+}
+
+.narrate-findings p {
+  margin: 4px 0 0;
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  color: var(--text-mid);
+}
+
+.narrate-actions {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.narrate-actions li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.narrate-actions__num {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid color-mix(in oklab, var(--emerald) 36%, transparent);
+  background: color-mix(in oklab, var(--emerald) 10%, transparent);
+  color: var(--emerald-ink);
+  font-size: var(--text-2xs);
+}
+
+.narrate-actions b {
+  font-size: var(--text-sm);
+  color: var(--text);
+}
+
+.narrate-actions p {
+  margin: 3px 0 0;
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  color: var(--text-mid);
+}
+
+.narrate-body__foot {
+  margin: 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: var(--text-2xs);
+  color: var(--text-mute);
+  letter-spacing: 0.02em;
+}
+
+@media print {
+  .narrate-panel {
+    break-inside: avoid;
+  }
+}
+
 /* ------------------------- presets en el catálogo ----------------------- */
 
 .suno-presets {

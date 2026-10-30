@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { analyzeTrack, type AnalysisResult, type DecodedTrack } from "../lib/audio/analyzer";
 import { decodeFile, sliceTrack } from "../lib/audio/decode";
-import { COVER_STYLES, renderCoverStyle, type CoverStyle } from "../lib/audio/wav";
+import { COVER_STYLES, applyCharacter, DEFAULT_CHARACTER, renderCoverStyle, type CoverCharacter, type CoverStyle } from "../lib/audio/wav";
 import { getAudio } from "../lib/storage/db";
 import { useStudio } from "../lib/storage/store";
 import { COST, type RenderRecord, type ScanRecord } from "../lib/storage/types";
@@ -68,6 +68,9 @@ export function CoverizadorPage() {
   const [outputs, setOutputs] = useState<CoverOutput[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState({ pct: 0, stage: "Preparando" });
+  const [character, setCharacter] = useState<CoverCharacter>(DEFAULT_CHARACTER);
+  const setChar = <K extends keyof CoverCharacter>(key: K, value: CoverCharacter[K]) =>
+    setCharacter((prev) => ({ ...prev, [key]: value }));
   const resultRef = useRef<HTMLDivElement | null>(null);
 
   const project = projects.find((p) => p.id === (sourceScan?.projectId ?? projectFilter));
@@ -186,10 +189,12 @@ export function CoverizadorPage() {
         const base = 6 + i * 31;
 
         setProgress({ pct: base, stage: `${style.name} · preparando DSP` });
-        const rendered = await renderCoverStyle(track.channels, track.sampleRate, style.id, {
+        const baseChannels = await renderCoverStyle(track.channels, track.sampleRate, style.id, {
           onProgress: (pct, stage) =>
             setProgress({ pct: Math.min(98, base + Math.round(pct * 0.18)), stage: `${style.name} · ${stage}` }),
         });
+        // Carácter creativo elegido por el usuario, aplicado sobre la cadena del estilo.
+        const rendered = applyCharacter(baseChannels, track.sampleRate, character);
 
         const duration = rendered[0].length / track.sampleRate;
         const renderedTrack: DecodedTrack = { ...track, channels: rendered, duration };
@@ -406,6 +411,54 @@ export function CoverizadorPage() {
                     </div>
                   );
                 })}
+              </div>
+
+              <div className="cover-character card">
+                <div className="chart-head">
+                  <span className="chart-title">Carácter creativo</span>
+                  <span className="chart-note">SE APLICA A LAS TRES VERSIONES · PICO −1 dBFS</span>
+                </div>
+                <div className="cover-character__grid">
+                  <label className="cover-character__field">
+                    <span>Saturación · {Math.round(character.drive * 100)} %</span>
+                    <input
+                      type="range" min={0} max={100} value={Math.round(character.drive * 100)}
+                      onChange={(e) => setChar("drive", Number(e.target.value) / 100)}
+                    />
+                  </label>
+                  <label className="cover-character__field">
+                    <span>Bitcrush · {Math.round(character.crush * 100)} %</span>
+                    <input
+                      type="range" min={0} max={100} value={Math.round(character.crush * 100)}
+                      onChange={(e) => setChar("crush", Number(e.target.value) / 100)}
+                    />
+                  </label>
+                  <label className="cover-character__field">
+                    <span>Wow &amp; flutter · {Math.round(character.wow * 100)} %</span>
+                    <input
+                      type="range" min={0} max={100} value={Math.round(character.wow * 100)}
+                      onChange={(e) => setChar("wow", Number(e.target.value) / 100)}
+                    />
+                  </label>
+                  <label className="cover-character__field">
+                    <span>Brillo · {character.tilt > 0 ? "+" : ""}{Math.round(character.tilt * 100)}</span>
+                    <input
+                      type="range" min={-100} max={100} value={Math.round(character.tilt * 100)}
+                      onChange={(e) => setChar("tilt", Number(e.target.value) / 100)}
+                    />
+                  </label>
+                  <label className="cover-character__field">
+                    <span>Anchura estéreo · {Math.round(character.width * 100)} %</span>
+                    <input
+                      type="range" min={0} max={100} value={Math.round(character.width * 100)}
+                      onChange={(e) => setChar("width", Number(e.target.value) / 100)}
+                    />
+                  </label>
+                </div>
+                <p className="cover-character__hint">
+                  El cambio de tempo y de melodía no se hace aquí: el cover necesita reconocer tu tema. Esto
+                  altera grano, armónicos y espacio, que es lo que hace que suene a otra cosa.
+                </p>
               </div>
 
               {relevantScans.length > 0 && (

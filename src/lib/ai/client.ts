@@ -61,7 +61,59 @@ export async function improveSet(input: {
   }
 }
 
-/* ------------------------- set completo con letra ----------------------- */
+/* --------------------------- informe narrado ---------------------------- */
+
+export interface NarrateFinding {
+  title: string;
+  detail: string;
+  severity?: string;
+}
+
+export interface NarrateAction {
+  title: string;
+  detail: string;
+  priority?: string;
+}
+
+export interface NarrateResult {
+  available: boolean;
+  ok: boolean;
+  headline?: string;
+  summary?: string;
+  findings?: NarrateFinding[];
+  actions?: NarrateAction[];
+  disclaimer?: string;
+  model?: string;
+  error?: string;
+}
+
+/** Pide a la IA que explique el informe técnico y priorice las acciones. */
+export async function narrateReport(report: unknown): Promise<NarrateResult> {
+  if (!PROXY) return { available: false, ok: false, error: "IA no configurada" };
+
+  try {
+    const response = await fetch(`${PROXY}/api/narrate`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ report }),
+      signal: AbortSignal.timeout(90_000),
+    });
+
+    if (!response.ok) {
+      const detail = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+      return { available: true, ok: false, error: detail.error ?? `HTTP ${response.status}` };
+    }
+
+    const data = (await response.json()) as NarrateResult;
+    if (!data.headline || !data.summary) {
+      return { available: true, ok: false, error: "respuesta incompleta del modelo" };
+    }
+    return { ...data, available: true, ok: true };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "error de red";
+    return { available: true, ok: false, error: message };
+  }
+}
 
 export interface AiComposeSuggestion extends AiSuggestion {
   title?: string;
@@ -92,6 +144,10 @@ export async function composeSet(input: {
   vocal: string;
   language?: string;
   existingLyrics?: string;
+  /** Número de intento: >1 pide un ángulo deliberadamente distinto. */
+  variant?: number;
+  /** Letra de una versión anterior que NO debe repetirse. */
+  avoid?: string;
   mode?: "create" | "rewrite";
 }): Promise<AiComposeResult> {
   if (!PROXY) return { available: false, ok: false, error: "IA no configurada" };

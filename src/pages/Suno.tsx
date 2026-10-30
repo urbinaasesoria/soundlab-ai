@@ -194,29 +194,38 @@ export function SunoPage() {
             {g.label}
           </button>
         ))}
+        <button
+          className={`pill ${group === "presets" ? "pill--active" : ""}`}
+          onClick={() => {
+            setGroup("presets");
+            setQuery("");
+            setOnlyFavorites(false);
+          }}
+        >
+          Presets · {SUNO_PRESETS.length}
+        </button>
       </div>
 
-      <div className="suno-presets">
-        <div className="suno-presets__toggle">
-          <button className="btn btn--soft btn--sm" onClick={() => setShowPresets((prev) => !prev)}>
-            {showPresets ? "Ocultar" : "Ver"} los {SUNO_PRESETS.length} presets de producción
-          </button>
-          <span className="chart-note">
-            Estilos base ya optimizados (en inglés) que usa el compositor como columna vertebral
-          </span>
+      <div className={`card suno-presets-panel ${group === "presets" ? "is-prime" : ""}`} id="presets">
+        <div className="chart-head">
+          <span className="chart-title">Presets de producción</span>
+          <span className="chart-note">{SUNO_PRESETS.length} · BASE DEL COMPOSITOR</span>
         </div>
-
-        {showPresets && (
-          <div className="suno-presets__grid">
-            {SUNO_PRESETS.map((preset) => (
-              <div className="card suno-preset" key={preset.id}>
-                <div className="suno-preset__head">
-                  <b>{preset.name}</b>
-                  <span className="mono">{preset.bpmLabel} BPM</span>
-                </div>
-                <p className="suno-preset__text">{preset.styleBase}</p>
-                <div className="suno-preset__foot">
-                  <span className="suno-preset__inst">{preset.instruments.join(" · ")}</span>
+        <p className="suno-presets__intro">
+          Estilos base ya optimizados (en inglés). Son el punto de partida del compositor: cópialos tal cual
+          o ábrelos para ajustar emoción, instrumentación y voz sin perder la esencia del género.
+        </p>
+        <div className="suno-presets__grid">
+          {SUNO_PRESETS.map((preset) => (
+            <div className="card suno-preset" key={preset.id}>
+              <div className="suno-preset__head">
+                <b>{preset.name}</b>
+                <span className="mono">{preset.bpmLabel} BPM</span>
+              </div>
+              <p className="suno-preset__text">{preset.styleBase}</p>
+              <div className="suno-preset__foot">
+                <span className="suno-preset__inst">{preset.instruments.join(" · ")}</span>
+                <div className="suno-preset__actions">
                   <button
                     className="btn btn--ghost btn--sm"
                     onClick={async () => {
@@ -224,16 +233,19 @@ export function SunoPage() {
                       toast(ok ? `Prompt de «${preset.name}» copiado.` : "No se pudo copiar.", ok ? "ok" : "err");
                     }}
                   >
-                    Copiar prompt
+                    Copiar
                   </button>
+                  <Link to="/compositor" className="btn btn--soft btn--sm">
+                    Abrir
+                  </Link>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="suno-layout">
+      <div className="suno-layout" style={group === "presets" ? { display: "none" } : undefined}>
         <aside className="suno-list chart-card">
           <div className="chart-head">
             <span className="chart-title">{onlyFavorites ? "Favoritos" : searching ? "Búsqueda" : groupLabel}</span>

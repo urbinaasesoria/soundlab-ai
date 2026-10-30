@@ -42,6 +42,7 @@ export function CompositorPage() {
   const [aiBusy, setAiBusy] = useState(false);
   const [aiNote, setAiNote] = useState<{ kind: "ok" | "err"; text: string; rationale?: string[] } | null>(null);
   const [aiSnapshot, setAiSnapshot] = useState<{ lyrics: string; styleOverride: string } | null>(null);
+  const [aiVariants, setAiVariants] = useState<string[]>([]);
   const refInput = useRef<HTMLInputElement>(null);
 
   const set = <K extends keyof CompositorForm>(key: K, value: CompositorForm[K]) =>
@@ -140,7 +141,12 @@ export function CompositorPage() {
   const generateLyrics = async () => {
     setAiBusy(true);
     setAiNote(null);
-    const mode = form.lyrics.trim() ? "rewrite" : "create";
+    const previous = aiVariants[0] ?? "";
+    // Solo se reescribe si la letra la escribió el usuario; si viene de la IA se
+    // genera una versión nueva para que el reintento no devuelva lo mismo.
+    const ownLyrics = Boolean(form.lyrics.trim()) && !aiVariants.includes(form.lyrics);
+    const mode: "create" | "rewrite" = ownLyrics ? "rewrite" : "create";
+    const variant = aiVariants.length + 1;
     const response = await composeSet({
       idea: form.idea,
       preset: result.presetName,
@@ -151,8 +157,10 @@ export function CompositorPage() {
       mood: MOODS.find((m) => m.id === form.moodId)?.es ?? "",
       vocal: [form.vocalGender, form.vocalTechnique, form.vocalAttitude].filter(Boolean).join(", "),
       language: "es",
-      existingLyrics: form.lyrics,
+      existingLyrics: ownLyrics ? form.lyrics : "",
       mode,
+      variant,
+      avoid: previous,
     });
     setAiBusy(false);
 
@@ -162,7 +170,8 @@ export function CompositorPage() {
     }
 
     const suggestion = response.suggestion;
-    setAiSnapshot({ lyrics: form.lyrics, styleOverride: form.styleOverride });
+    if (!aiSnapshot) setAiSnapshot({ lyrics: form.lyrics, styleOverride: form.styleOverride });
+    setAiVariants((prev) => [suggestion.lyrics, ...prev].slice(0, 5));
     setForm((prev) => ({
       ...prev,
       lyrics: suggestion.lyrics,
@@ -375,9 +384,11 @@ export function CompositorPage() {
                   {aiBusy ? <Loader2 size={13} className="composer-spin" /> : <Wand2 size={13} />}{" "}
                   {aiBusy
                     ? "Componiendo…"
-                    : form.lyrics.trim()
-                      ? "Reescribir letra con IA"
-                      : "Generar letra con IA"}
+                    : aiVariants.length > 0
+                      ? `Generar otra versión (${aiVariants.length + 1}ª)`
+                      : form.lyrics.trim()
+                        ? "Reescribir letra con IA"
+                        : "Generar letra con IA"}
                 </button>
                 <span>
                   Escribe la letra a partir de tu idea y ajusta el style prompt para que encajen. Respeta el

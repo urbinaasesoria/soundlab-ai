@@ -339,6 +339,8 @@ function composeUserText(payload) {
     language = "es",
     existingLyrics = "",
     mode = "create",
+    variant = 1,
+    avoid = "",
   } = payload ?? {};
 
   return [
@@ -353,6 +355,12 @@ function composeUserText(payload) {
       ? `LETRA ACTUAL DEL USUARIO (modo ${mode === "rewrite" ? "REESCRITURA: conserva idea y métrica" : "referencia"}):\n"""${String(existingLyrics).slice(0, 4000)}"""`
       : "El usuario NO tiene letra: escríbela desde cero a partir de la idea.",
     stylePrompt ? `SET ACTUAL DEL MOTOR (mejóralo, no lo traiciones):\n"""${String(set || stylePrompt).slice(0, 2000)}"""` : "",
+    variant > 1
+      ? `VARIANTE ${variant}: el usuario RECHAZÓ la versión anterior. Busca un ángulo CLARAMENTE distinto — otra estructura, otras imágenes, otro punto de vista narrativo o incluso otro narrador. Prohibido reutilizar versos, rimas o estribillos de intentos previos.`
+      : "",
+    avoid
+      ? `NO REUTILICES NADA DE ESTA VERSIÓN PREVIA (ni sus imágenes ni sus rimas):\n"""${String(avoid).slice(0, 3000)}"""`
+      : "",
     "Devuelve el JSON con el set completo.",
   ]
     .filter(Boolean)
@@ -387,7 +395,8 @@ async function handleCompose(req, res) {
         systemInstruction: { parts: [{ text: COMPOSE_SYSTEM }] },
         contents: [{ role: "user", parts: [{ text: composeUserText(payload) }] }],
         generationConfig: {
-          temperature: 0.85,
+          // Cada reintento sube la temperatura: si no, el modelo converge a la misma letra.
+          temperature: Number(payload?.variant) > 1 ? 0.98 : 0.85,
           maxOutputTokens: 4096,
           responseMimeType: "application/json",
           responseSchema: COMPOSE_SCHEMA,
@@ -452,6 +461,142 @@ async function handleCompose(req, res) {
   }
 }
 
+/* --------------------------- informe narrado ---------------------------- */
+
+const NARRATE_SCHEMA = {
+  type: "object",
+  properties: {
+    headline: { type: "string" },
+    summary: { type: "string" },
+    findings: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          title: { type: "string" },
+          detail: { type: "string" },
+          severity: { type: "string" },
+        },
+        required: ["title", "detail"],
+      },
+    },
+    actions: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          title: { type: "string" },
+          detail: { type: "string" },
+          priority: { type: "string" },
+        },
+        required: ["title", "detail"],
+      },
+    },
+    disclaimer: { type: "string" },
+  },
+  required: ["headline", "summary", "findings", "actions"],
+};
+
+const NARRATE_SYSTEM = `${SYSTEM_PROMPT}
+
+MODO INFORME NARRADO
+Recibirás el JSON de un informe técnico ya calculado por DSP local (métricas de loudness ITU-R BS.1770,
+rango dinámico, estéreo, tonalidad, ritmo, índice de IA con sus señales y recomendaciones del motor).
+
+Tu trabajo NO es recalcular nada ni contradecir los números: es explicarlos.
+
+REGLAS
+1. No inventes cifras que no estén en el JSON. Si falta un dato, dilo.
+2. Explica el diagnóstico como lo haría un ingeniero de mastering frente al productor: qué está bien, qué
+   está fuera de rango y por qué importa.
+3. Ordena las acciones por impacto real, no por facilidad.
+4. Distingue lo que se arregla con mezcla o master de lo que exige volver a la producción.
+5. Si el índice de IA se apoya en señales débiles o no calibradas, dilo con claridad: no es un veredicto.
+6. Tono directo y honesto, sin condescendencia ni relleno. Español neutro.
+7. En disclaimer, una frase recordando que es una lectura automática y que el oído manda.`;
+
+async function handleNarrate(req, res) {
+  let body = "";
+  for await (const chunk of req) {
+    body += chunk;
+    if (body.length > MAX_BODY) return send(req, res, 413, { error: "payload demasiado grande" });
+  }
+
+  let payload;
+  try {
+    payload = JSON.parse(body || "{}");
+  } catch {
+    return send(req, res, 400, { error: "JSON inválido" });
+  }
+
+  if (!payload?.report || typeof payload.report !== "object") {
+    return send(req, res, 400, { error: "falta el informe" });
+  }
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-goog-api-key": API_KEY },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: NARRATE_SYSTEM }] },
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text:
+                  "INFORME (JSON):\n" +
+                  JSON.stringify(payload.report).slice(0, 12000) +
+                  "\n\nExplícalo y prioriza las acciones.",
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.45,
+          maxOutputTokens: 2500,
+          responseMimeType: "application/json",
+          responseSchema: NARRATE_SCHEMA,
+          thinkingConfig: { thinkingBudget: 0 },
+        },
+      }),
+      signal: AbortSignal.timeout(75_000),
+    });
+
+    const text = await response.text();
+    if (!response.ok) {
+      console.error("[proxy] error del proveedor (narrate)", response.status);
+      return send(req, res, 502, { error: `el proveedor respondió ${response.status}` });
+    }
+
+    const data = JSON.parse(text);
+    const candidate = data?.candidates?.[0];
+    const raw = candidate?.content?.parts?.[0]?.text ?? "";
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return send(req, res, 502, { error: "respuesta no estructurada del modelo" });
+    }
+
+    return send(req, res, 200, {
+      ...parsed,
+      model: MODEL,
+      usage: data?.usageMetadata
+        ? {
+            inputTokens: data.usageMetadata.promptTokenCount ?? null,
+            outputTokens: data.usageMetadata.candidatesTokenCount ?? null,
+          }
+        : null,
+    });
+  } catch (error) {
+    console.error("[proxy] fallo de red (narrate)", error?.name ?? "error");
+    return send(req, res, 502, { error: "no se pudo contactar con el proveedor" });
+  }
+}
+
 /* -------------------------------- servidor ------------------------------ */
 
 const server = createServer((req, res) => {
@@ -471,7 +616,7 @@ const server = createServer((req, res) => {
     return send(req, res, 200, { ok: true, model: MODEL, hasKey: true });
   }
 
-  if (req.method !== "POST" || !["/api/suggest", "/api/compose"].includes(req.url)) {
+  if (req.method !== "POST" || !["/api/suggest", "/api/compose", "/api/narrate"].includes(req.url)) {
     return send(req, res, 404, { error: "ruta no encontrada" });
   }
 
@@ -480,6 +625,7 @@ const server = createServer((req, res) => {
   }
 
   if (req.url === "/api/compose") void handleCompose(req, res);
+  else if (req.url === "/api/narrate") void handleNarrate(req, res);
   else void handleSuggest(req, res);
 });
 

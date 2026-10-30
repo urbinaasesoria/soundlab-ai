@@ -388,6 +388,122 @@ export async function renderCoverStyle(
 
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
+/**
+ * Carácter creativo adicional para el coverizador.
+ * Se aplica DESPUÉS de la cadena del estilo: no la sustituye, la colorea.
+ */
+export interface CoverCharacter {
+  /** 0–1 saturación armónica (drive) */
+  drive: number;
+  /** 0–1 reducción de bits (bitcrush) */
+  crush: number;
+  /** 0–1 deriva de velocidad (wow & flutter) */
+  wow: number;
+  /** −1 (oscuro) a 1 (brillante) */
+  tilt: number;
+  /** 0–1 anchura estéreo extra */
+  width: number;
+}
+
+export const DEFAULT_CHARACTER: CoverCharacter = {
+  drive: 0.25,
+  crush: 0,
+  wow: 0.15,
+  tilt: 0,
+  width: 0.2,
+};
+
+export const NEUTRAL_CHARACTER: CoverCharacter = { drive: 0, crush: 0, wow: 0, tilt: 0, width: 0 };
+
+/**
+ * Colorea las tres reinterpretaciones con el carácter elegido.
+ * Todo se aplica en el dominio del tiempo y termina en un limitador suave con
+ * pico objetivo −1 dBFS: el WAV resultante siempre es seguro para subir.
+ */
+export function applyCharacter(
+  channels: Float32Array[],
+  sampleRate: number,
+  character: CoverCharacter,
+): Float32Array[] {
+  const out = channels.map((ch) => ch.slice());
+  const { drive, crush, wow, tilt, width } = character;
+
+  /* --- saturación (drive) --- */
+  if (drive > 0.001) {
+    const pre = 1 + drive * 6;
+    const post = 1 / Math.tanh(pre);
+    for (const ch of out) {
+      for (let i = 0; i < ch.length; i++) {
+        const shaped = Math.tanh(ch[i] * pre) * post;
+        ch[i] = shaped * (1 - drive * 0.35) + ch[i] * (drive * 0.35);
+      }
+    }
+  }
+
+  /* --- bitcrush --- */
+  if (crush > 0.001) {
+    const bits = Math.max(4, Math.round(16 - crush * 11));
+    const levels = Math.pow(2, bits - 1);
+    for (const ch of out) {
+      for (let i = 0; i < ch.length; i++) ch[i] = Math.round(ch[i] * levels) / levels;
+    }
+  }
+
+  /* --- wow & flutter (deriva de velocidad) --- */
+  if (wow > 0.001 && out.length > 0) {
+    const depth = wow * 0.004 * sampleRate; // hasta 4 ms de desviación
+    const rate = 0.6 + wow * 1.4;
+    for (const ch of out) {
+      const source = ch.slice();
+      for (let i = 0; i < ch.length; i++) {
+        const t = (i / sampleRate) * Math.PI * 2 * rate;
+        const offset = Math.sin(t) * depth + Math.sin(t * 4.7) * depth * 0.25;
+        const pos = i + offset;
+        const i0 = Math.floor(pos);
+        const frac = pos - i0;
+        const a = source[Math.max(0, Math.min(source.length - 1, i0))];
+        const b = source[Math.max(0, Math.min(source.length - 1, i0 + 1))];
+        ch[i] = a + (b - a) * frac;
+      }
+    }
+  }
+
+  /* --- tilt tonal: una sola banda, sin filtros largos --- */
+  if (Math.abs(tilt) > 0.02) {
+    const coefficient = tilt > 0 ? 0.25 : 0.06;
+    for (const ch of out) {
+      let low = 0;
+      for (let i = 0; i < ch.length; i++) {
+        low += coefficient * (ch[i] - low);
+        const high = ch[i] - low;
+        ch[i] = tilt > 0 ? ch[i] + high * tilt * 0.9 : ch[i] + low * tilt * 0.9;
+      }
+    }
+  }
+
+  /* --- anchura estéreo (M/S) --- */
+  if (width > 0.001 && out.length === 2) {
+    const [left, right] = out;
+    for (let i = 0; i < left.length; i++) {
+      const mid = (left[i] + right[i]) * 0.5;
+      const side = (left[i] - right[i]) * 0.5 * (1 + width);
+      left[i] = mid + side;
+      right[i] = mid - side;
+    }
+  }
+
+  /* --- limitador suave para garantizar compatibilidad de subida --- */
+  let peak = 0;
+  for (const ch of out) for (let i = 0; i < ch.length; i++) peak = Math.max(peak, Math.abs(ch[i]));
+  const target = 0.891; // ≈ −1 dBFS
+  if (peak > target) {
+    const gain = target / peak;
+    for (const ch of out) for (let i = 0; i < ch.length; i++) ch[i] = Math.tanh(ch[i] * gain * 1.05) * 0.98;
+  }
+
+  return out;
+}
+
 export function blobToWavUrl(channels: Float32Array[], sampleRate: number): string {
   return URL.createObjectURL(encodeWav(channels, sampleRate));
 }

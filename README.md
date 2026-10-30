@@ -237,6 +237,9 @@ scripts/
 
 ## Estado del proyecto
 
+**Para retomar el trabajo, lee [docs/CONTINUIDAD.md](./docs/CONTINUIDAD.md)**: estado actual por área,
+decisiones cerradas, plan de validación por fases, pendientes priorizados y convenciones.
+
 Ver [PLAN-MAESTRO-URBINA.md](./PLAN-MAESTRO-URBINA.md) para la auditoría, la hoja de ruta y el estado de
 cada fase.
 

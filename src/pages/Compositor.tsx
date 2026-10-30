@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Check, ClipboardCopy, Download, Info, Loader2, Sparkles, Upload, X } from "lucide-react";
+import { ArrowLeft, Check, ClipboardCopy, Download, Info, Loader2, Sparkles, Upload, Wand2, X } from "lucide-react";
 import { useStudio } from "../lib/storage/store";
 import { downloadBlob, downloadText } from "../lib/utils";
 import { analyzeTrackAsync } from "../lib/audio/analyzeClient";
@@ -25,7 +25,7 @@ import {
 } from "../lib/suno/composer";
 import { PRESET_GROUPS, SUNO_PRESETS, findPreset } from "../lib/suno/presets";
 import { deriveFromAnalysis, type ReferenceDerivation } from "../lib/suno/fromAnalysis";
-import { aiConfigured, improveSet } from "../lib/ai/client";
+import { aiConfigured, composeSet, improveSet } from "../lib/ai/client";
 import { SUNO_LIMITS } from "../lib/suno/limits";
 
 const PROFILES: { id: CreativeProfile; label: string; hint: string }[] = [
@@ -41,6 +41,7 @@ export function CompositorPage() {
   const [refBusy, setRefBusy] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
   const [aiNote, setAiNote] = useState<{ kind: "ok" | "err"; text: string; rationale?: string[] } | null>(null);
+  const [aiSnapshot, setAiSnapshot] = useState<{ lyrics: string; styleOverride: string } | null>(null);
   const refInput = useRef<HTMLInputElement>(null);
 
   const set = <K extends keyof CompositorForm>(key: K, value: CompositorForm[K]) =>
@@ -128,6 +129,57 @@ export function CompositorPage() {
       kind: "ok",
       text: `Propuesta aplicada con ${response.suggestion.model ?? "el modelo"}. Puedes editarla a mano o quitarla.`,
       rationale: response.suggestion.rationale,
+    });
+  };
+
+  /**
+   * Genera el set completo cuando el usuario solo aporta una idea o un verso:
+   * la IA escribe la letra alineada con género, BPM, tonalidad y emoción, y
+   * ajusta el estilo para que ambos encajen.
+   */
+  const generateLyrics = async () => {
+    setAiBusy(true);
+    setAiNote(null);
+    const mode = form.lyrics.trim() ? "rewrite" : "create";
+    const response = await composeSet({
+      idea: form.idea,
+      preset: result.presetName,
+      set: result.stylePrompt,
+      stylePrompt: result.stylePrompt,
+      bpm: form.bpm,
+      keyScale: form.keyScale,
+      mood: MOODS.find((m) => m.id === form.moodId)?.es ?? "",
+      vocal: [form.vocalGender, form.vocalTechnique, form.vocalAttitude].filter(Boolean).join(", "),
+      language: "es",
+      existingLyrics: form.lyrics,
+      mode,
+    });
+    setAiBusy(false);
+
+    if (!response.ok || !response.suggestion) {
+      setAiNote({ kind: "err", text: response.error ?? "La IA no devolvió ninguna letra." });
+      return;
+    }
+
+    const suggestion = response.suggestion;
+    setAiSnapshot({ lyrics: form.lyrics, styleOverride: form.styleOverride });
+    setForm((prev) => ({
+      ...prev,
+      lyrics: suggestion.lyrics,
+      keepLyrics: true,
+      styleOverride: suggestion.stylePrompt || prev.styleOverride,
+    }));
+
+    setAiNote({
+      kind: "ok",
+      text:
+        `Letra y estilo generados con ${suggestion.model ?? "el modelo"} (modo ${mode === "rewrite" ? "reescritura" : "creación"}). ` +
+        "Es una propuesta: revísala antes de publicarla y ajusta lo que no suene a ti.",
+      rationale: [
+        ...(suggestion.lyricsNotes ? [`Estructura: ${suggestion.lyricsNotes}`] : []),
+        ...(suggestion.warnings ?? []),
+        ...suggestion.rationale,
+      ],
     });
   };
 
@@ -307,6 +359,32 @@ export function CompositorPage() {
               />
               Mantener la letra intacta (no reescribir ni corregir)
             </label>
+
+            {aiConfigured && (
+              <div className="composer-ai-cta">
+                <button
+                  className="btn btn--gold btn--sm"
+                  onClick={() => void generateLyrics()}
+                  disabled={aiBusy || (!form.idea.trim() && !form.lyrics.trim())}
+                  title={
+                    form.idea.trim() || form.lyrics.trim()
+                      ? "La IA escribe la letra y ajusta el estilo al mismo tiempo"
+                      : "Escribe una idea o un verso para que la IA componga la letra"
+                  }
+                >
+                  {aiBusy ? <Loader2 size={13} className="composer-spin" /> : <Wand2 size={13} />}{" "}
+                  {aiBusy
+                    ? "Componiendo…"
+                    : form.lyrics.trim()
+                      ? "Reescribir letra con IA"
+                      : "Generar letra con IA"}
+                </button>
+                <span>
+                  Escribe la letra a partir de tu idea y ajusta el style prompt para que encajen. Respeta el
+                  manual de SUNO 6.0: estribillo de 2–4 líneas, metatags y cierre <code>[End]</code>.
+                </span>
+              </div>
+            )}
           </section>
 
           <section className="card composer-step">
@@ -732,8 +810,19 @@ export function CompositorPage() {
                   </ul>
                 )}
                 {aiNote.kind === "ok" && (
-                  <button className="btn btn--ghost btn--sm" onClick={() => { set("styleOverride", ""); setAiNote(null); }}>
-                    Volver al ensamblado del motor
+                  <button
+                    className="btn btn--ghost btn--sm"
+                    onClick={() => {
+                      setForm((prev) => ({
+                        ...prev,
+                        lyrics: aiSnapshot?.lyrics ?? prev.lyrics,
+                        styleOverride: aiSnapshot?.styleOverride ?? "",
+                      }));
+                      setAiSnapshot(null);
+                      setAiNote(null);
+                    }}
+                  >
+                    Deshacer el set de la IA
                   </button>
                 )}
               </div>

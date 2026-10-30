@@ -512,3 +512,28 @@
   justify-self: start;
   margin-top: 2px;
 }
+
+/* Botón de composición de letra: acción principal del bloque de idea. */
+.composer-ai-cta {
+  display: grid;
+  gap: 8px;
+  padding: 14px 15px;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in oklab, var(--gold) 26%, transparent);
+  background: color-mix(in oklab, var(--gold) 6%, transparent);
+}
+
+.composer-ai-cta .btn {
+  justify-self: start;
+}
+
+.composer-ai-cta span {
+  font-size: var(--text-xs);
+  line-height: 1.55;
+  color: var(--text-mute);
+}
+
+.composer-ai-cta code {
+  font-size: var(--text-2xs);
+  color: var(--gold-ink);
+}

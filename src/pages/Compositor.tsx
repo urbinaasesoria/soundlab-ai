@@ -1,14 +1,16 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Check, ClipboardCopy, Download, Info, Wand2, X } from "lucide-react";
+import { ArrowLeft, Check, ClipboardCopy, Download, Info, Loader2, Sparkles, Upload, X } from "lucide-react";
 import { useStudio } from "../lib/storage/store";
 import { downloadBlob, downloadText } from "../lib/utils";
-import { SUNO_GENRES } from "../lib/data/suno";
+import { analyzeTrackAsync } from "../lib/audio/analyzeClient";
+import { decodeFile, sliceTrack } from "../lib/audio/decode";
 import {
   buildPack,
   compileSet,
   EMPTY_FORM,
   formatPlainText,
+  formForPreset,
   KEY_SCALES,
   MOODS,
   MUSICAL_MODES,
@@ -21,6 +23,8 @@ import {
   type CreativeProfile,
   type VocalGender,
 } from "../lib/suno/composer";
+import { PRESET_GROUPS, SUNO_PRESETS, findPreset } from "../lib/suno/presets";
+import { deriveFromAnalysis, type ReferenceDerivation } from "../lib/suno/fromAnalysis";
 import { SUNO_LIMITS } from "../lib/suno/limits";
 
 const PROFILES: { id: CreativeProfile; label: string; hint: string }[] = [
@@ -32,6 +36,9 @@ const PROFILES: { id: CreativeProfile; label: string; hint: string }[] = [
 export function CompositorPage() {
   const { toast } = useStudio();
   const [form, setForm] = useState<CompositorForm>(EMPTY_FORM);
+  const [reference, setReference] = useState<ReferenceDerivation | null>(null);
+  const [refBusy, setRefBusy] = useState("");
+  const refInput = useRef<HTMLInputElement>(null);
 
   const set = <K extends keyof CompositorForm>(key: K, value: CompositorForm[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -48,10 +55,54 @@ export function CompositorPage() {
     setForm((prev) => ({ ...prev, profile: id, weirdness, styleInfluence }));
   };
 
-  const genreList = useMemo(
-    () => SUNO_GENRES.map((g) => ({ id: g.id, name: g.name, bpm: g.bpm })),
-    [],
-  );
+  /** Cambiar de preset restablece BPM y exclusiones a las del género. */
+  const applyPreset = (presetId: string) => {
+    const preset = findPreset(presetId);
+    setForm((prev) => ({
+      ...prev,
+      presetId,
+      bpm: prev.bpm || (preset ? String(Math.round((preset.bpmMin + preset.bpmMax) / 2)) : ""),
+      exclude: preset ? preset.defaultExclusions : prev.exclude,
+    }));
+  };
+
+  /** Analiza una referencia con el motor DSP y deriva decisiones de producción. */
+  const analyzeReference = async (file: File) => {
+    setRefBusy("Decodificando…");
+    setReference(null);
+    try {
+      const decoded = await decodeFile(file);
+      setRefBusy("Midiendo…");
+      const target = decoded.duration > 75 ? sliceTrack(decoded, 75) : decoded;
+      const result = await analyzeTrackAsync(target, {
+        tier: "rapido",
+        onProgress: (p) => setRefBusy(`${p.stage} · ${Math.round(p.pct)} %`),
+      });
+      const derived = deriveFromAnalysis(result);
+      setReference(derived);
+      setRefBusy("");
+      toast("Referencia analizada: propuesta lista para aplicar.", "ok");
+    } catch (err) {
+      setRefBusy("");
+      toast(err instanceof Error ? err.message : "No se pudo analizar la referencia.", "err");
+    } finally {
+      if (refInput.current) refInput.current.value = "";
+    }
+  };
+
+  const applyReference = () => {
+    if (!reference) return;
+    setForm((prev) => ({
+      ...prev,
+      presetId: reference.presetId,
+      bpm: reference.bpm ? String(reference.bpm) : prev.bpm,
+      keyScale: reference.keyScale || prev.keyScale,
+      moodId: reference.moodId,
+      productionKeywords: Array.from(new Set([...prev.productionKeywords, ...reference.productionKeywords])),
+      exclude: findPreset(reference.presetId)?.defaultExclusions ?? prev.exclude,
+    }));
+    toast("Análisis aplicado al set de producción.", "ok");
+  };
 
   const result = useMemo(() => compileSet(form), [form]);
 
@@ -108,6 +159,83 @@ export function CompositorPage() {
       <div className="composer-grid">
         {/* ------------------------------ formulario ------------------------------ */}
         <div className="composer-form stack-4">
+          <section className="card composer-step composer-ref">
+            <div className="composer-step__head">
+              <span className="composer-step__num mono">AI</span>
+              <div>
+                <b>Analiza tu referencia</b>
+                <p>
+                  Sube un track que te guste: el motor mide tempo, tonalidad, dinámica, estéreo y aire, y
+                  propone preset, emoción e instrumentación. El audio se analiza en tu equipo y no se envía
+                  a ningún servidor.
+                </p>
+              </div>
+            </div>
+
+            <div className="composer-ref__actions">
+              <input
+                ref={refInput}
+                type="file"
+                accept="audio/*"
+                hidden
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void analyzeReference(file);
+                }}
+              />
+              <button
+                className="btn btn--soft btn--sm"
+                onClick={() => refInput.current?.click()}
+                disabled={Boolean(refBusy)}
+              >
+                {refBusy ? <Loader2 size={13} className="composer-spin" /> : <Upload size={13} />}
+                {refBusy || "Subir referencia"}
+              </button>
+              {reference && (
+                <button className="btn btn--gold btn--sm" onClick={applyReference}>
+                  <Sparkles size={13} /> Aplicar al set
+                </button>
+              )}
+            </div>
+
+            {reference && (
+              <>
+                <div className="composer-ref__chips">
+                  {reference.measurements.map((m) => (
+                    <span key={m.label} className="chip">
+                      <b>{m.label}</b>&nbsp;{m.value}
+                    </span>
+                  ))}
+                </div>
+                <div className="composer-ref__pick">
+                  <span className="mono">PROPUESTA</span>
+                  <b>{reference.presetName}</b>
+                  {reference.bpm !== null && <span className="mono">{reference.bpm} BPM</span>}
+                  {reference.keyScale && <span className="mono">{reference.keyScale}</span>}
+                  <span className="mono">MOOD {reference.moodId}</span>
+                </div>
+                <ul className="composer-ref__why">
+                  {reference.rationale.map((reason) => (
+                    <li key={reason}>{reason}</li>
+                  ))}
+                </ul>
+                {reference.caveats.length > 0 && (
+                  <ul className="composer-ref__caveats">
+                    {reference.caveats.map((c) => (
+                      <li key={c}>{c}</li>
+                    ))}
+                  </ul>
+                )}
+                {reference.missing.length > 0 && (
+                  <p className="composer-ref__missing">
+                    Sin datos suficientes para: {reference.missing.join(", ")}. Esos campos se respetan tal
+                    como los tengas.
+                  </p>
+                )}
+              </>
+            )}
+          </section>
+
           <section className="card composer-step">
             <div className="composer-step__head">
               <span className="composer-step__num mono">01</span>
@@ -167,29 +295,36 @@ export function CompositorPage() {
             <div className="form-grid">
               <div className="field">
                 <label className="label" htmlFor="c-genre">
-                  Género del catálogo
+                  Preset de género
                 </label>
                 <select
                   id="c-genre"
                   className="select"
-                  value={form.genreId}
-                  onChange={(e) => set("genreId", e.target.value)}
+                  value={form.presetId}
+                  onChange={(e) => applyPreset(e.target.value)}
                 >
-                  {genreList.map((g) => (
-                    <option key={g.id} value={g.id}>
-                      {g.name} · {g.bpm}
-                    </option>
+                  {PRESET_GROUPS.map((group) => (
+                    <optgroup key={group} label={group}>
+                      {SUNO_PRESETS.filter((x) => x.group === group).map((preset) => (
+                        <option key={preset.id} value={preset.id}>
+                          {preset.name} · {preset.bpmLabel} BPM
+                        </option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
+                <span className="field__hint">
+                  {(findPreset(form.presetId) ?? SUNO_PRESETS[0]).description}
+                </span>
               </div>
               <div className="field">
                 <label className="label" htmlFor="c-custom">
-                  Subgénero propio (opcional)
+                  Matiz sobre el preset (opcional)
                 </label>
                 <input
                   id="c-custom"
                   className="input"
-                  placeholder="Ej. dark synth pop con cuerdas"
+                  placeholder="Ej. con cuerdas andinas y coros"
                   value={form.customGenre}
                   onChange={(e) => set("customGenre", e.target.value)}
                 />
@@ -529,6 +664,17 @@ export function CompositorPage() {
                 <ul>
                   {result.checks.warnings.map((w) => (
                     <li key={w}>{w}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {result.checks.notes.length > 0 && (
+              <div className="composer-notes">
+                <Info size={13} />
+                <ul>
+                  {result.checks.notes.map((n) => (
+                    <li key={n}>{n}</li>
                   ))}
                 </ul>
               </div>

@@ -1,27 +1,26 @@
 /**
  * ============================================================================
- *  COMPOSITOR DE PRODUCCIÓN PARA SUNO — motor determinista
+ *  COMPOSITOR DE PRODUCCIÓN PARA SUNO — motor determinista v2
  * ============================================================================
  *  © 2026 URBINA ASESORÍA E INVERSIONES S.A.C.
  *
- *  Implementa la metodología **PRO FLOW de 5 pasos** del motor original
- *  (Moi-Suno) sin depender de ningún modelo generativo:
+ *  Metodología **PRO FLOW de 5 pasos** (portada del motor original Moi-Suno)
+ *  sin depender de modelos generativos. Novedades v2:
  *
- *    1. Precisión de género (inglés, época y subgénero exactos)
- *    2. Dirección emocional y contexto cinematográfico
- *    3. Timbre e instrumentación dirigida (1–3 protagonistas)
- *    4. Arquitectura vocal (género, técnica, actitud) — sin citar artistas
- *    5. Metadatos técnicos (BPM, tonalidad y términos de ingeniería)
+ *   · Parte del **preset de género** de la casa (20 presets con style prompt ya
+ *     optimizado) en lugar de recomponer el género desde cero. Así el
+ *     conocimiento de cada género se conserva y el usuario solo ajusta matices.
+ *   · Acepta un **análisis de audio** como referencia: BPM, tonalidad, emoción
+ *     e instrumentación se derivan de lo medido, no de una suposición.
+ *   · Separación estricta entre *problemas* (warnings) y *sugerencias* (notes).
  *
- *  Es determinista: la misma entrada produce siempre el mismo set. Cada
- *  decisión se registra en `decisions` para que el resultado sea auditable y
- *  se pueda corregir a mano. No inventa letras: si el usuario no aporta la
- *  suya, devuelve un esqueleto de estructura, nunca versos falsos.
+ *  Es determinista: la misma entrada produce siempre el mismo set. No inventa
+ *  letras: si el usuario no aporta la suya, devuelve un esqueleto de estructura.
  * ============================================================================
  */
-import { SUNO_GENRES, type SunoGenre } from "../data/suno";
 import { BRAND } from "../brand";
 import { SUNO_LIMITS } from "./limits";
+import { findPreset, presetBpm, SUNO_PRESETS, type SunoPreset } from "./presets";
 
 /* ------------------------------- tipos ---------------------------------- */
 
@@ -29,9 +28,10 @@ export type VocalGender = "" | "female" | "male" | "duet" | "instrumental";
 export type CreativeProfile = "fiel" | "equilibrado" | "experimental";
 
 export interface CompositorForm {
-  /** Idea, tema o letra de partida. */
   idea: string;
-  genreId: string;
+  /** Id del preset de género de la casa. */
+  presetId: string;
+  /** Matiz libre sobre el preset (opcional). */
   customGenre: string;
   bpm: string;
   keyScale: string;
@@ -56,11 +56,13 @@ export interface CompositorForm {
 export interface PackChecks {
   styleChars: number;
   styleLimit: number;
+  styleDense: boolean;
   lyricsChars: number;
   lyricsLimit: number;
   excludeChars: number;
   fitsSuno: boolean;
   warnings: string[];
+  notes: string[];
 }
 
 export interface Decision {
@@ -78,7 +80,7 @@ export interface ProductionSet {
   engineerNotes: string[];
   checks: PackChecks;
   decisions: Decision[];
-  genreName: string;
+  presetName: string;
 }
 
 /* ---------------------------- catálogos --------------------------------- */
@@ -96,15 +98,29 @@ export const MOODS = [
 
 export const KEY_SCALES = [
   { value: "C minor", label: "C menor (oscuro)" },
+  { value: "C# minor", label: "C# menor" },
   { value: "D minor", label: "D menor (serio)" },
-  { value: "A minor", label: "A menor (melancólico)" },
-  { value: "F# minor", label: "F# menor (tensión)" },
+  { value: "D# minor", label: "D# menor" },
   { value: "E minor", label: "E menor" },
+  { value: "F minor", label: "F menor" },
+  { value: "F# minor", label: "F# menor (tensión)" },
   { value: "G minor", label: "G menor" },
-  { value: "G major", label: "G mayor (cálido)" },
-  { value: "D major", label: "D mayor (eufórico)" },
+  { value: "G# minor", label: "G# menor" },
+  { value: "A minor", label: "A menor (melancólico)" },
+  { value: "A# minor", label: "A# menor" },
+  { value: "B minor", label: "B menor" },
   { value: "C major", label: "C mayor" },
+  { value: "C# major", label: "C# mayor" },
+  { value: "D major", label: "D mayor (eufórico)" },
+  { value: "D# major", label: "D# mayor" },
+  { value: "E major", label: "E mayor" },
+  { value: "F major", label: "F mayor" },
+  { value: "F# major", label: "F# mayor" },
+  { value: "G major", label: "G mayor (cálido)" },
+  { value: "G# major", label: "G# mayor" },
   { value: "A major", label: "A mayor" },
+  { value: "A# major", label: "A# mayor" },
+  { value: "B major", label: "B mayor" },
 ] as const;
 
 export const MUSICAL_MODES = [
@@ -162,57 +178,35 @@ export const EXCLUSIONS = [
   { id: "loud", label: "Sin sobrecompresión", en: "overcompressed master, clipped drums" },
 ] as const;
 
-const PROFILES: Record<CreativeProfile, { weirdness: number; styleInfluence: number; terms: string[]; note: string }> = {
-  fiel: {
-    weirdness: 12,
-    styleInfluence: 92,
-    terms: ["transparent bus compression", "gentle tape saturation"],
-    note: "Perfil fiel: máxima obediencia al style prompt. Ideal cuando ya tienes claro el sonido.",
-  },
-  equilibrado: {
-    weirdness: 28,
-    styleInfluence: 80,
-    terms: ["sidechain compression", "wide stereo image"],
-    note: "Perfil equilibrado: respeta el estilo y deja margen creativo al modelo.",
-  },
-  experimental: {
-    weirdness: 58,
-    styleInfluence: 62,
-    terms: ["creative bus distortion", "generative modulation"],
-    note: "Perfil experimental: más libertad del modelo. Útil para buscar ángulos nuevos.",
-  },
-};
-
-/** Términos que identifican instrumentos dentro de las etiquetas del catálogo. */
-const INSTRUMENT_HINTS = [
-  "guitar",
-  "guitars",
-  "drums",
-  "synth",
-  "synths",
-  "pads",
-  "808",
-  "bass",
-  "piano",
-  "strings",
-  "sax",
-  "trumpet",
-  "organ",
-  "arp",
-  "arpeggio",
-  "percussion",
-  "brass",
-  "vinyl",
-  "brush",
-  "tremolo",
-  "supersaw",
-];
+const PROFILES: Record<CreativeProfile, { weirdness: number; styleInfluence: number; terms: string[]; note: string }> =
+  {
+    fiel: {
+      weirdness: 12,
+      styleInfluence: 92,
+      terms: ["transparent bus compression", "gentle tape saturation"],
+      note: "Perfil fiel: máxima obediencia al style prompt. Ideal cuando ya tienes claro el sonido.",
+    },
+    equilibrado: {
+      weirdness: 28,
+      styleInfluence: 80,
+      terms: ["sidechain compression", "wide stereo image"],
+      note: "Perfil equilibrado: respeta el estilo y deja margen creativo al modelo.",
+    },
+    experimental: {
+      weirdness: 58,
+      styleInfluence: 62,
+      terms: ["creative bus distortion", "generative modulation"],
+      note: "Perfil experimental: más libertad del modelo. Útil para buscar ángulos nuevos.",
+    },
+  };
 
 /* ---------------------------- utilidades -------------------------------- */
 
+const firstPreset = SUNO_PRESETS[0];
+
 export const EMPTY_FORM: CompositorForm = {
   idea: "",
-  genreId: SUNO_GENRES[0]?.id ?? "",
+  presetId: firstPreset.id,
   customGenre: "",
   bpm: "",
   keyScale: "A minor",
@@ -223,7 +217,7 @@ export const EMPTY_FORM: CompositorForm = {
   vocalTechnique: "",
   vocalAttitude: "",
   productionKeywords: [],
-  exclude: [],
+  exclude: [...firstPreset.defaultExclusions],
   maxMode: false,
   vocalEntryHack: false,
   instrumentalBridge: false,
@@ -234,21 +228,28 @@ export const EMPTY_FORM: CompositorForm = {
   styleInfluence: 80,
 };
 
+/** Formulario inicial derivado de un preset concreto. */
+export function formForPreset(presetId: string): CompositorForm {
+  const preset = findPreset(presetId) ?? firstPreset;
+  return {
+    ...EMPTY_FORM,
+    presetId: preset.id,
+    bpm: String(presetBpm(preset)),
+    exclude: [...preset.defaultExclusions],
+  };
+}
+
 function slugTitle(text: string): string {
-  const clean = text
-    .replace(/\s+/g, " ")
-    .replace(/[^\p{L}\p{N} ]/gu, "")
-    .trim();
+  const clean = text.replace(/\s+/g, " ").replace(/[^\p{L}\p{N} ]/gu, "").trim();
   if (!clean) return "Sin título";
-  const words = clean.split(" ").slice(0, 6).join(" ");
-  return words.slice(0, SUNO_LIMITS.titleMaxChars);
+  return clean.split(" ").slice(0, 6).join(" ").slice(0, SUNO_LIMITS.titleMaxChars);
 }
 
 function unique(values: string[]): string[] {
   return Array.from(new Set(values.filter(Boolean)));
 }
 
-/** Recorta una lista de fragmentos hasta caber en un límite de caracteres. */
+/** Recorta partes hasta caber en un límite, sin cortar una parte por la mitad. */
 function fitParts(parts: string[], limit: number): string {
   const kept: string[] = [];
   for (const part of parts) {
@@ -258,28 +259,28 @@ function fitParts(parts: string[], limit: number): string {
   return kept.join(", ");
 }
 
+const hasTerm = (text: string, term: string) => text.toLowerCase().includes(term.toLowerCase());
+
 /* ----------------------------- compilación ------------------------------ */
 
 /** Ensambla un set de producción completo a partir del formulario. */
 export function compileSet(form: CompositorForm): ProductionSet {
   const decisions: Decision[] = [];
   const warnings: string[] = [];
+  const notes: string[] = [];
 
-  /* ---- Paso 1: género ---- */
-  const genre: SunoGenre | undefined = SUNO_GENRES.find((g) => g.id === form.genreId);
-  const genreName = form.customGenre.trim() || genre?.name || "Pop";
-  const genreTags = genre?.tags ?? [];
-  const instrumentTags = genreTags.filter((t) => INSTRUMENT_HINTS.some((h) => t.includes(h))).slice(0, 2);
-  const characterTags = genreTags.filter((t) => !instrumentTags.includes(t)).slice(0, 2);
+  const preset: SunoPreset = findPreset(form.presetId) ?? firstPreset;
+  const profile = PROFILES[form.profile];
 
+  /* ---- Paso 1: género (preset de la casa como base) ---- */
+  const refine = form.customGenre.trim();
   decisions.push({
     step: "1 · Género",
-    detail: `${genreName}${genre ? ` (${genre.bpm})` : ""} · etiquetas: ${unique([...characterTags, ...instrumentTags]).join(", ") || "—"}`,
+    detail: `${preset.name} · ${preset.bpmLabel} BPM${refine ? ` · matiz: “${refine}”` : ""}`,
   });
 
   /* ---- Paso 2: emoción y contexto ---- */
   const mood = MOODS.find((m) => m.id === form.moodId);
-  const emotional = mood ? mood.en : "";
   const cinematic = form.cinematic.trim();
   decisions.push({
     step: "2 · Emoción",
@@ -287,10 +288,12 @@ export function compileSet(form: CompositorForm): ProductionSet {
   });
 
   /* ---- Paso 3: instrumentación ---- */
-  const instruments = unique([...instrumentTags, ...form.productionKeywords]).slice(0, 3);
+  const extraInstruments = form.productionKeywords.filter((k) => !hasTerm(preset.styleBase, k));
   decisions.push({
     step: "3 · Instrumentación",
-    detail: instruments.length ? instruments.join(", ") : "la del género",
+    detail: extraInstruments.length
+      ? `${preset.instruments.slice(0, 3).join(", ")} + ${extraInstruments.join(", ")}`
+      : preset.instruments.slice(0, 4).join(", "),
   });
 
   /* ---- Paso 4: voz ---- */
@@ -306,99 +309,91 @@ export function compileSet(form: CompositorForm): ProductionSet {
       .filter(Boolean)
       .join(", ");
   }
-  decisions.push({
-    step: "4 · Voz",
-    detail: vocal || "no especificada · el modelo decide",
-  });
+  decisions.push({ step: "4 · Voz", detail: vocal || "no especificada · el modelo decide" });
 
   /* ---- Paso 5: metadatos técnicos ---- */
-  const bpmValue = form.bpm.trim() || (genre?.bpm ?? "").replace(/[^0-9–-]/g, "") || "";
-  const profile = PROFILES[form.profile];
+  const bpmValue = form.bpm.trim() || String(presetBpm(preset));
   const technical = unique([
-    bpmValue ? `${bpmValue} BPM` : "",
+    `${bpmValue} BPM`,
     form.keyScale,
     form.musicalMode,
     ...profile.terms.slice(0, 2),
   ]).join(", ");
-  decisions.push({
-    step: "5 · Técnica",
-    detail: technical,
-  });
+  decisions.push({ step: "5 · Técnica", detail: technical });
 
-  /* ---- Ensamblado del stylePrompt ---- */
+  /* ---- Ensamblado sobre el style prompt del preset ---- */
   const parts: string[] = [];
   if (form.maxMode) {
-    const synthetic = /edm|electronic|techno|hyperpop|reggaeton|dembow|trap/i.test(genreName);
-    const maxBlock = ["[is_mode_max]", "[quality_max_max]", "[realness_max_max]"];
-    if (!synthetic) maxBlock.push("[real_instrument_max_max]");
-    parts.push(maxBlock.join(" "));
+    const synthetic = /urbano|trap|edm|electronic/i.test(preset.group);
+    const block = ["[is_mode_max]", "[quality_max_max]", "[realness_max_max]"];
+    if (!synthetic) block.push("[real_instrument_max_max]");
+    parts.push(block.join(" "));
     decisions.push({
       step: "MAX MODE",
-      detail: `bloque de metadatos${synthetic ? " (sin real_instrument por ser género sintético)" : ""}`,
+      detail: `bloque de acondicionamiento${synthetic ? " (sin real_instrument por ser género sintético)" : ""}`,
     });
   }
 
-  parts.push(`${genreName.toLowerCase()}${characterTags.length ? `, ${characterTags.join(", ")}` : ""}`);
-  if (emotional) parts.push(emotional);
-  if (instruments.length) parts.push(instruments.join(", "));
+  parts.push(preset.styleBase);
+  if (refine) parts.push(refine);
+  if (mood) parts.push(mood.en);
+  if (extraInstruments.length) parts.push(extraInstruments.join(", "));
   if (vocal) parts.push(vocal);
   if (cinematic) parts.push(`evoking ${cinematic}`);
-  if (technical) parts.push(technical);
+  parts.push(technical);
 
-  const stylePrompt = fitParts(parts, SUNO_LIMITS.styleTargetMaxChars);
+  const stylePrompt = fitParts(parts, SUNO_LIMITS.styleMaxChars);
 
-  /* ---- excludeStyles ---- */
-  const excludes: string[] = form.exclude
+  /* ---- exclusiones: las del preset + las elegidas ---- */
+  const excludeIds = unique([...preset.defaultExclusions, ...form.exclude]);
+  const excludes = excludeIds
     .map((id) => EXCLUSIONS.find((e) => e.id === id)?.en)
     .filter((v): v is (typeof EXCLUSIONS)[number]["en"] => typeof v === "string");
   const excludeStyles = fitParts(excludes, SUNO_LIMITS.excludeMaxChars);
 
-  /* ---- Letra ---- */
-  let lyrics = form.keepLyrics ? form.lyrics : form.lyrics;
-  if (!lyrics.trim()) {
-    lyrics = [
-      "[Intro]",
-      "(instrumental, define la atmósfera en 4 compases)",
-      "",
-      "[Verse 1]",
-      "(pega aquí tu primera estrofa)",
-      "",
-      "[Pre-Chorus]",
-      "(sube la tensión: filtro que abre, armonía que asciende)",
-      "",
-      "[Chorus]",
-      "(el gancho: una sola idea, repetible, sin adjetivos de más)",
-      "",
-      "[Verse 2]",
-      "(cuenta un detalle concreto, no repitas la primera estrofa)",
-      "",
-      form.instrumentalBridge ? `[Bridge: ${instruments[0] ?? "guitar"} Solo]` : "[Bridge]",
-      form.instrumentalBridge ? "(solo instrumental, sin voz)" : "(cambio de perspectiva o de armonía)",
-      "",
-      "[Chorus]",
-      "",
-      "[Outro]",
-      "(cierre: deja que el último elemento resuene)",
-    ].join("\n");
-  } else if (!/\[(intro|verse|chorus|estribillo|verso)/i.test(lyrics)) {
-    // El usuario aportó la letra sin etiquetas: se conserva intacta y solo se
-    // le añade la primera marca de estructura.
-    lyrics = `[Verse 1]\n${lyrics.trim()}`;
-    warnings.push("Tu letra no tenía etiquetas de estructura: se ha añadido [Verse 1] al principio. Revisa el resto a mano.");
+  /* ---- letra ---- */
+  const scaffold = [
+    "[Intro]",
+    `(instrumental · ${preset.instruments.slice(0, 2).join(" y ")})`,
+    "",
+    "[Verse 1]",
+    "(pega aquí tu primera estrofa)",
+    "",
+    "[Pre-Chorus]",
+    "(sube la tensión: filtro que abre, armonía que asciende)",
+    "",
+    "[Chorus]",
+    "(el gancho: una sola idea, repetible, sin adjetivos de más)",
+    "",
+    "[Verse 2]",
+    "(cuenta un detalle concreto, no repitas la primera estrofa)",
+    "",
+    form.instrumentalBridge ? `[Bridge: ${preset.instruments[0]} Solo]` : "[Bridge]",
+    form.instrumentalBridge ? "(solo instrumental, sin voz)" : "(cambio de perspectiva o de armonía)",
+    "",
+    "[Chorus]",
+    "",
+    "[Outro]",
+    `(${preset.structureHint})`,
+  ].join("\n");
+
+  let lyrics = form.lyrics.trim() ? form.lyrics : scaffold;
+  if (!form.lyrics.trim()) {
+    notes.push(`Esqueleto basado en ${preset.name}: ${preset.structureHint}`);
+  } else if (!/\[(intro|verso|verse|coro|chorus|estribillo)/i.test(lyrics)) {
+    lyrics = `[Verse 1]\n${lyrics}`;
+    notes.push("Tu letra no tenía etiquetas de estructura: se añadió [Verse 1] al principio. Revisa el resto.");
   }
 
   if (form.vocalEntryHack && !lyrics.startsWith("[***]")) {
     lyrics = `[***]\n[start_on_through]\n\n${lyrics}`;
   }
 
-  if (form.instrumentalBridge && !/solo/i.test(lyrics)) {
-    lyrics = lyrics.replace(/\[Chorus\]\n/i, `[Chorus]\n\n[Bridge: ${instruments[0] ?? "guitar"} Solo]\n`);
-  }
-
-  /* ---- Notas de ingeniería ---- */
+  /* ---- notas de ingeniería ---- */
   const engineerNotes = [
     profile.note,
-    `Apunta a ${bpmValue ? `${bpmValue} BPM` : "el tempo de tu referencia"} y ${form.keyScale}: son los dos parámetros que Suno respeta con más consistencia.`,
+    `Estilo base del preset «${preset.name}»: ${preset.instruments.join(", ")}. BPM de referencia ${preset.bpmLabel}.`,
+    preset.structureHint,
     "El campo style va en inglés y admite 1000 caracteres; la densidad técnica importa más que la longitud. La letra va aparte.",
     "Nunca escribas nombres de artistas reales en los campos de Suno: el modelo los ignora y puede contaminar el estilo.",
     form.maxMode
@@ -406,23 +401,33 @@ export function compileSet(form: CompositorForm): ProductionSet {
       : "Si el resultado suena genérico, sube Weirdness en pasos de 10 antes de reescribir el prompt.",
   ];
 
-  /* ---- Validación ---- */
+  /* ---- validación ---- */
   const styleChars = stylePrompt.length;
   const lyricsChars = lyrics.length;
   const excludeChars = excludeStyles.length;
+  const styleDense = styleChars > SUNO_LIMITS.styleTargetMaxChars;
 
-  if (styleChars < SUNO_LIMITS.styleTargetMinChars) {
-    warnings.push(
-      `El style prompt tiene ${styleChars} caracteres; por debajo de ${SUNO_LIMITS.styleTargetMinChars} Suno suele producir resultados genéricos.`,
+  if (styleChars > SUNO_LIMITS.styleMaxChars) {
+    warnings.push(`El style prompt (${styleChars}) supera el máximo de Suno (${SUNO_LIMITS.styleMaxChars}).`);
+  } else if (styleDense) {
+    notes.push(
+      `El style prompt tiene ${styleChars} caracteres. El rango óptimo es ${SUNO_LIMITS.styleTargetMinChars}–${SUNO_LIMITS.styleTargetMaxChars}; Suno acepta hasta ${SUNO_LIMITS.styleMaxChars}, pero diluir el estilo suele empeorar el resultado.`,
     );
   }
-  if (styleChars > SUNO_LIMITS.styleMaxChars) warnings.push("El style prompt supera el máximo de Suno.");
+  if (styleChars < SUNO_LIMITS.styleTargetMinChars) {
+    notes.push("El style prompt es muy corto: añade un matiz de género o instrumentación.");
+  }
   if (lyricsChars > SUNO_LIMITS.lyricsMaxChars) {
     warnings.push(`La letra tiene ${lyricsChars} caracteres y supera el máximo de ${SUNO_LIMITS.lyricsMaxChars}.`);
   } else if (lyricsChars > SUNO_LIMITS.lyricsWarnChars) {
-    warnings.push(`La letra está cerca del límite (${lyricsChars}/${SUNO_LIMITS.lyricsMaxChars}).`);
+    notes.push(`La letra está cerca del límite (${lyricsChars}/${SUNO_LIMITS.lyricsMaxChars}).`);
   }
-  if (!form.vocalGender) warnings.push("No has definido el perfil vocal: el modelo tomará una decisión por su cuenta.");
+  if (!form.vocalGender) {
+    notes.push("No has definido el perfil vocal: el modelo tomará una decisión por su cuenta.");
+  }
+  if (excludeChars > SUNO_LIMITS.excludeMaxChars) {
+    warnings.push("Exclude styles supera la longitud recomendada y Suno puede ignorarlo.");
+  }
 
   const fitsSuno =
     styleChars > 0 &&
@@ -432,23 +437,25 @@ export function compileSet(form: CompositorForm): ProductionSet {
     excludeChars <= SUNO_LIMITS.excludeMaxChars;
 
   return {
-    title: slugTitle(form.idea || `${genreName} ${mood?.es ?? ""}`),
+    title: slugTitle(form.idea || `${preset.name} ${mood?.es ?? ""}`),
     stylePrompt,
     excludeStyles,
     lyrics,
     weirdness: form.weirdness,
     styleInfluence: form.styleInfluence,
     engineerNotes,
-    genreName,
+    presetName: preset.name,
     decisions,
     checks: {
       styleChars,
       styleLimit: SUNO_LIMITS.styleMaxChars,
+      styleDense,
       lyricsChars,
       lyricsLimit: SUNO_LIMITS.lyricsMaxChars,
       excludeChars,
       fitsSuno,
       warnings,
+      notes,
     },
   };
 }
@@ -457,9 +464,10 @@ export function compileSet(form: CompositorForm): ProductionSet {
 
 export interface SunoPack {
   format: "soundlab.sunopack";
-  version: 1;
+  version: 2;
   exportedAt: string;
   owner: string;
+  preset: string;
   title: string;
   stylePrompt: string;
   excludeStyles: string;
@@ -470,13 +478,13 @@ export interface SunoPack {
   checks: PackChecks;
 }
 
-/** Empaqueta el set en un archivo portable para importar en el flujo propio. */
 export function buildPack(set: ProductionSet): SunoPack {
   return {
     format: "soundlab.sunopack",
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
     owner: BRAND.legalName,
+    preset: set.presetName,
     title: set.title,
     stylePrompt: set.stylePrompt,
     excludeStyles: set.excludeStyles,
@@ -488,10 +496,10 @@ export function buildPack(set: ProductionSet): SunoPack {
   };
 }
 
-/** Bloque de texto listo para pegar en Suno de una sola vez. */
 export function formatPlainText(set: ProductionSet): string {
   return [
     `${BRAND.full.toUpperCase()} · SET DE PRODUCCIÓN`,
+    `PRESET: ${set.presetName}`,
     "",
     `TÍTULO: ${set.title}`,
     "",

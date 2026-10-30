@@ -343,3 +343,129 @@
   line-height: 1.62;
   color: var(--text-mute);
 }
+
+/* ---------------------- referencia analizada (DSP) ---------------------- */
+
+.composer-ref {
+  border-color: color-mix(in oklab, var(--emerald) 22%, var(--line));
+  background-image:
+    linear-gradient(120deg, color-mix(in oklab, var(--emerald) 5%, transparent), transparent 58%),
+    var(--sheen);
+}
+
+.composer-ref .composer-step__num {
+  border-color: color-mix(in oklab, var(--emerald) 38%, transparent);
+  background: color-mix(in oklab, var(--emerald) 11%, transparent);
+  color: var(--emerald-ink);
+}
+
+.composer-ref__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.composer-ref__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.composer-ref__chips .chip {
+  font-size: var(--text-2xs);
+  padding: 4px 9px;
+}
+
+.composer-ref__chips .chip b {
+  color: var(--text-mute);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  font-size: 9px;
+}
+
+.composer-ref__pick {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in oklab, var(--emerald) 26%, transparent);
+  background: color-mix(in oklab, var(--emerald) 6%, transparent);
+}
+
+.composer-ref__pick b {
+  font-size: var(--text-sm);
+  color: var(--text);
+}
+
+.composer-ref__pick span.mono {
+  font-size: var(--text-2xs);
+  color: var(--text-mute);
+  letter-spacing: var(--tracking-wide);
+}
+
+.composer-ref__why {
+  margin: 0;
+  padding-left: 16px;
+  display: grid;
+  gap: 5px;
+  font-size: var(--text-xs);
+  line-height: 1.55;
+  color: var(--text-mid);
+}
+
+.composer-ref__missing {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-mute);
+  font-style: italic;
+}
+
+.composer-ref__caveats {
+  margin: 0;
+  padding: 10px 13px 10px 28px;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in oklab, var(--gold) 30%, transparent);
+  background: color-mix(in oklab, var(--gold) 6%, transparent);
+  display: grid;
+  gap: 5px;
+  font-size: var(--text-xs);
+  line-height: 1.55;
+  color: var(--text-mid);
+}
+
+.composer-notes {
+  display: flex;
+  gap: 9px;
+  padding: 11px 13px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: color-mix(in oklab, var(--bg) 55%, transparent);
+  color: var(--text-mute);
+  font-size: var(--text-xs);
+}
+
+.composer-notes ul {
+  margin: 0;
+  padding-left: 15px;
+  display: grid;
+  gap: 4px;
+  line-height: 1.5;
+}
+
+.composer-notes svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+@keyframes composer-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.composer-spin {
+  animation: composer-spin 0.9s linear infinite;
+}

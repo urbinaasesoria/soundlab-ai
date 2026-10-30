@@ -28,7 +28,8 @@ export const BRAND = {
   /** Nombre comercial completo. */
   full: "SoundLab AI",
   /** Descripción corta del producto. */
-  tagline: "Laboratorio de audio: diagnóstico, corrección y trazabilidad en tu navegador.",
+  tagline:
+    "Copiloto de producción musical asistida por IA: diagnóstico técnico, prompts de Suno y corrección con DSP, todo en tu navegador.",
   /** Año de inicio de explotación comercial. */
   since: 2026,
   /** Identificador del motor de análisis local. */

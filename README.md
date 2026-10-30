@@ -7,9 +7,16 @@
 > *"SoundLab" es un término descriptivo y genérico: antes de registrar la marca conviene verificar su
 > disponibilidad en INDECOPI (clases 9 y 42) y valorar añadir un distintivo propio.*
 
-Laboratorio de audio que se ejecuta **íntegramente en el navegador**: diagnóstico técnico de un máster,
-compositor de producción para Suno, corrección con DSP real y certificación de integridad con SHA-256.
-**Ningún archivo de audio se sube a un servidor.**
+Herramienta de **apoyo a la producción musical asistida por IA**. Se ejecuta **íntegramente en el
+navegador**: diagnóstico técnico de un máster, compositor de producción para Suno, corrección con DSP real
+y certificación de integridad con SHA-256. **Ningún archivo de audio se sube a un servidor.**
+
+Tres ideas ordenan el producto:
+
+1. **El audio no sale de tu equipo.** Todo el DSP (análisis, humanización, covers, hash) corre en local.
+2. **Nada se inventa.** Cada cifra del informe sale de una medición; cada sugerencia del compositor trae su
+   justificación; cuando no hay datos, se dice.
+3. **La IA es el copiloto, no el motor.** Si mañana sube de precio o desaparece, la app sigue en pie.
 
 ---
 
@@ -47,7 +54,7 @@ Requiere Node 24+ y un navegador con Web Audio, Web Crypto, IndexedDB y Web Work
 | Módulo | Implementación | Honestidad |
 | --- | --- | --- |
 | **Escáner** | DSP local: 8 señales medidas (microtiming, rejilla, extensión de agudos, piso de ruido, estéreo, rango dinámico…) combinadas en un índice explicable | Índice **heurístico**, `calibrated: false`. No es un clasificador entrenado ni predice plataformas |
-| **Compositor Suno** | Motor determinista PRO FLOW de 5 pasos: style prompt en inglés, letra estructurada, exclusiones, weirdness/influence y exportación de pack | **No genera música ni letras.** Construye el set de parámetros que Suno interpreta mejor |
+| **Compositor Suno** | Parten del **preset de género de la casa** (20 presets con style prompt optimizado y BPM real), aplican PRO FLOW de 5 pasos y **aceptan un análisis de audio como referencia**: BPM, tonalidad, emoción e instrumentación se derivan de lo medido | **No genera música ni letras.** Construye y justifica el set de parámetros que Suno interpreta mejor |
 | **Humanizador** | Procesado real de muestras: wow/flutter, transitorios, saturación, M/S, aire, ruido, DC | WAV 24-bit + **verificación automática** de si el índice mejora o empeora |
 | **Coverizador** | 3 cadenas DSP deterministas: Acústico, Lo-fi, Club | No son covers generados por IA |
 | **Escudo** | SHA-256 real (Web Crypto) + certificado local verificable | Prueba de integridad y fecha. No es una transacción de Bitcoin |
@@ -75,6 +82,25 @@ audio ──▶ features.ts ──▶ model.ts ──▶ analyzer.ts ──▶ i
 
 `MODEL_META.calibrated = false` es deliberado. Para activar un modelo entrenado, ver la sección de
 calibración.
+
+### Del análisis al prompt
+
+El escáner y el compositor comparten el mismo motor. En `/compositor` puedes **subir una referencia**:
+el DSP mide tempo, tonalidad, LRA, ancho estéreo, centroide y aire por encima de 16 kHz, y de ahí deriva
+preset, emoción, instrumentación y ajustes técnicos, con la justificación de cada decisión y un aviso
+cuando un valor no es fiable (por ejemplo, un tempo fuera de todos los rangos). La ruta está en
+`src/lib/suno/fromAnalysis.ts` y no inventa campos: si falta una señal, se declara.
+
+## IA: qué usamos y qué no
+
+El compositor es **determinista y local**, sin coste por uso. La IA se reserva para lo que el DSP no puede
+dar: redactar y reescribir prompts, generar borradores de letra y transcribir demos.
+
+La evaluación completa de proveedores —Gemini, Claude, Whisper, Demucs, RoEx, Stable Audio, con costes y
+recomendación por función— está en **[docs/IA-MODELOS.md](./docs/IA-MODELOS.md)**. Resumen:
+**Gemini Flash** por defecto, **Claude Sonnet** en Pro, **Whisper y Demucs** autoalojados, **RoEx** solo
+para mastering. No se integra generación musical: el valor está en preparar la entrada y auditar la
+salida.
 
 ### Verificación
 

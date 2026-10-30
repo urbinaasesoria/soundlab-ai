@@ -39,7 +39,7 @@ const TOOL_LINKS = [
   { to: "/compositor", label: "Compositor Suno", icon: Wand2 },
   { to: "/comparador", label: "Prueba a ciegas", icon: Ear },
   { to: "/scan", label: "Escanear", icon: ScanLine },
-  { to: "/humanizer", label: "Humanizador", icon: AudioWaveform, badge: "BETA", badgeClass: "badge--beta" },
+  { to: "/humanizer", label: "Detector de textura", icon: AudioWaveform, badge: "ANÁLISIS", locked: false },
   { to: "/forensic", label: "Análisis Forense", icon: Activity },
   { to: "/mix", label: "Mixing IA", icon: SlidersHorizontal, badge: "PRÓXIMAMENTE", locked: true },
   { to: "/master", label: "Mastering", icon: Disc3, badge: "PRÓXIMAMENTE", locked: true },

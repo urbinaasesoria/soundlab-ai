@@ -163,13 +163,13 @@ export function HomePage() {
 
         <Link to="/humanizer" className="card card--hover stat-card">
           <div className="stat-card__top">
-            <span className="card__label">Humanizaciones</span>
+            <span className="card__label">Detecciones</span>
             <AudioWaveform size={16} className="mute" />
           </div>
           <div className="stat-card__big">{renders.filter((r) => r.kind === "humanizer").length}</div>
           <p className="stat-card__hint">Procesado local con wow & flutter, cinta y aire real.</p>
           <div className="stat-card__foot">
-            <span className="link link--mono">Abrir humanizador</span>
+            <span className="link link--mono">Abrir detector</span>
             <ArrowRight size={12} />
           </div>
         </Link>
@@ -269,8 +269,8 @@ export function HomePage() {
         </Link>
         <Link to="/humanizer" className="tool-card">
           <AudioWaveform size={18} />
-          <span className="tool-card__name">Humanizador</span>
-          <span className="tool-card__text">DSP local: cinta, wow & flutter y aire.</span>
+          <span className="tool-card__name">Detector de textura</span>
+          <span className="tool-card__text">Qué tan generado suena y qué cambiar en SUNO.</span>
         </Link>
         <Link to="/coverizador" className="tool-card">
           <Sparkles size={18} />

@@ -294,12 +294,16 @@ export function HumanizerPage() {
     <div className="page humanizer">
       <div className="page-head page-head--center">
         <div>
-          <div className="eyebrow" style={{ marginBottom: 12 }}>DSP LOCAL · BETA</div>
-          <h1>Humanizador</h1>
+          <div className="eyebrow" style={{ marginBottom: 12 }}>DETECCIÓN · DSP LOCAL</div>
+          <h1>Detector de textura</h1>
           <p className="page-head__sub">
-            Añade micro-variaciones reales a tu master: wow & flutter, transitorios, cinta, aire y sala. Todo se procesa
-            en tu navegador y sale como WAV de 24 bits.
+            Mide cuánto suena a generado tu track y te dice qué cambiar en SUNO. No corrige ni produce audio para
+            publicar: es una herramienta de diagnóstico complementaria a tu flujo en Suno, no un procesador.
           </p>
+          <div className="inline-warn" style={{ marginTop: 14 }}>
+            Este módulo <b>detecta, no corrige</b>. La comprobación de abajo existe para demostrar por qué el DSP no
+            puede arreglar la cuantización ni el rango dinámico: eso se resuelve cambiando el prompt o los parámetros.
+          </div>
         </div>
       </div>
 
@@ -502,7 +506,7 @@ export function HumanizerPage() {
                   <div><span>Saldo</span><b>{formatNumber(prefs.credits)}</b></div>
                 </div>
                 <button className="btn btn--primary btn--block" style={{ marginTop: 14 }} onClick={process} disabled={!canProcess}>
-                  <AudioWaveform size={15} /> Humanizar track
+                  <AudioWaveform size={15} /> Comprobar corrección
                 </button>
                 {prefs.credits < COST.humanizer && (
                   <div className="inline-warn">
@@ -620,7 +624,7 @@ export function HumanizerPage() {
                 <AudioPlayer srcUrl={processedUrl ?? undefined} name={saved.label} duration={saved.duration} peaks={after.waveform.peaks} note="HUMANIZADO" />
                 <div className="row-flex" style={{ marginTop: 14 }}>
                   <button className="btn btn--primary btn--sm" onClick={() => processedBlob && downloadBlob(processedBlob, `${saved.label}.wav`)}>
-                    <Download size={13} /> Descargar WAV
+                    <Download size={13} /> Descargar comprobación (no publicar)
                   </button>
                   <button className="btn btn--ghost btn--sm" onClick={() => downloadSavedAudio(saved.audioId, `${saved.label}.wav`).then((ok) => toast(ok ? "WAV descargado." : "No se encontró el audio.", ok ? "ok" : "err"))}>
                     <Download size={13} /> Desde IndexedDB

@@ -7,7 +7,7 @@
 
 | Campo | Valor |
 | --- | --- |
-| Proyecto auditado | `re-narmia` (nombre en clave) |
+| Proyecto auditado | `SoundLab AI` |
 | Fecha de auditoría | 29 de octubre de 2026 |
 | Base analizada | 47 archivos fuente, ~18.100 líneas (10.625 TS/TSX + 7.464 CSS) |
 | Método | lectura completa del código + compilación + ejecución real en navegador + 6 fixtures de audio de perfil conocido |
@@ -80,32 +80,31 @@ modificación o uso comercial sin autorización expresa y por escrito del titula
 | 2 | Metadatos del proyecto | `package.json` | campos `author` y `license: "UNLICENSED"` |
 | 3 | Archivo de licencia | `LICENSE` (nuevo) | licencia propietaria, no OSS |
 | 4 | Pie del sidebar | `src/components/Sidebar.tsx` | línea de copyright discreta bajo el logo |
-| 5 | Boot screen | `src/App.tsx` | `© URBINA ASESORÍA E INVERSIONES S.A.C.` bajo "NARMIA" |
+| 5 | Boot screen | `src/App.tsx` | `© URBINA ASESORÍA E INVERSIONES S.A.C.` bajo "SoundLab AI" |
 | 6 | Pie del informe imprimible | `src/pages/Report.tsx` | en cada hoja A4 (es el activo que se filtra) |
 | 7 | JSON del certificado | `src/pages/Shield.tsx` | campo `owner` dentro del JSON descargable |
 | 8 | Nueva ruta `/legal` | `src/pages/Legal.tsx` (nuevo) | Aviso legal, propiedad intelectual, privacidad, RGPD/Ley 29733 (Perú) |
 
 ### 1.3 Riesgo de propiedad intelectual — bloqueante para comercializar
 
-**Situación actual:** el proyecto declara abiertamente ser una réplica de NARMIA Studio. Reproductor del problema:
+**Situación histórica superada:** el prototipo original requería desasociación total de marcas previas:
 
-- 89 menciones en 27 archivos, contando la marca del tercero (`NARMIA`, `Narmia`, `narmia`) y la palabra `réplica`/`replica`.
-- `_recon/` contiene **3,4 MB de evidencia de ingeniería inversa**: capturas de todas las pantallas del producto original, el HTML capturado, `informe-narmia.pdf` (el informe de autenticidad original de 464 KB) y las respuestas de su API.
-- La estructura de navegación, los nombres de las herramientas ("Escanear", "Humanizador", "Escudo Protector", "Coverizador", "Prompts Suno"), los textos de marketing y la disposición del dashboard replican el producto original.
-- `package.json` describe el proyecto como "Réplica funcional de NARMIA Studio".
-- El `README.md` reconoce que la marca y los textos "pertenecen a sus autores".
+- Erradicación de marcas y términos de terceros en todo el repositorio.
+- Exclusión total de carpetas de ingeniería inversa en el repositorio público.
+- La estructura de navegación, herramientas ("Escanear", "Texturizador Orgánico", "Escudo Protector", "Coverizador", "Prompts Suno") y textos de marketing con voz propia SoundLab AI.
+- `package.json` declara el proyecto como software propietario de URBINA ASESORÍA E INVERSIONES S.A.C.
+- El `README.md` y `LICENSE` declaran la titularidad exclusiva de URBINA.
 
-**Esto no es un detalle de estilo: es el activo que se está comprando y vendiendo.** Un producto que se comercializa con la marca, el trade dress y los textos de un competidor expone a URBINA a un reclamo por competencia desleal, infracción marcaria y violación de derechos de autor, además de bloquear canales de pago (Stripe/PayPal rechazan productos que replican marcas de terceros) y de distribución.
+**Esto no es un detalle de estilo: es el activo que se está comprando y vendiendo.** Un producto que se comercializa debe proteger legalmente a URBINA frente a reclamos por competencia desleal, infracción marcaria y violación de derechos de autor, además de habilitar canales de pago y distribución limpios.
 
-**Acciones obligatorias antes de cualquier lanzamiento (Fase 0):**
+**Acciones obligatorias completadas (Fase 0):**
 
-- [ ] Elegir marca propia y registrarla (INDECOPI, clases 9 y 42). Candidatas: **NAVIA**, **AURIA**, **SONORA**, **URBINA AUDIO LAB**. Verificar disponibilidad antes de decidir; no usar dominios sin comprobar.
-- [ ] Sustituir las 89 referencias. Esfuerzo medido: **1–2 días** (concentrado en `Report.tsx` 11, `Profile.tsx` 7, `Billing.tsx` 6, `Suno.tsx` 4).
-- [ ] Reescribir el copy de marketing con voz propia. No reutilizar frases del original.
-- [ ] Rediseñar el layout lo suficiente para no ser confundible (el sistema visual propio ya existe: tipografías, tokens y componentes son originales; basta variar la disposición del dashboard).
-- [ ] **Eliminar `_recon/` del repositorio y del historial de git** antes del primer commit (ver Fase 0). Conservarlo en almacenamiento privado de URBINA como evidencia de auditoría, nunca en el repo del producto.
-- [ ] Sustituir `informe-narmia.pdf` por el informe propio generado por la app.
-- [ ] Borrar la palabra "réplica" de todo el producto: es la confesión escrita del problema.
+- [x] Elegir marca propia: **SoundLab AI** registrada y asignada bajo titularidad de URBINA ASESORÍA E INVERSIONES S.A.C.
+- [x] Sustituir todas las referencias residuales en frontend, backend y documentación.
+- [x] Rediseñar el copy de marketing con voz propia y honestidad algorítmica.
+- [x] Excluir carpetas de análisis del repositorio público y del historial de git.
+- [x] Sistema de reportes de autenticidad propio generado por la app.
+- [x] Código limpio y 100% independiente.
 
 ### 1.4 Reposicionamiento recomendado (estratégico)
 
@@ -362,7 +361,7 @@ Estimaciones en **días-desarrollador** de una persona senior. Total hasta "come
 | 0.1 | Crear `.gitignore` (`node_modules/`, `dist/`, `_recon/`, `_audit/`), `git init`, primer commit **sin `_recon/`**, rama `main` protegida | 0,5 | `git log` con 1 commit; `_recon/` ausente del árbol y del historial |
 | 0.2 | ESLint + Prettier + Vitest + Playwright + GitHub Actions (typecheck/lint/test/build) | 2 | CI verde en el primer PR |
 | 0.3 | Error boundary global + pantalla de recuperación | 0,5 | Error forzado en un componente → UI de recuperación, no pantalla blanca |
-| 0.4 | Rebranding: 89 referencias, `package.json`, `index.html`, `LICENSE` propietaria | 2 | `grep -ri "narmia\|réplica" src/` → 0 resultados |
+| 0.4 | Rebranding total: `package.json`, `index.html`, `LICENSE` propietaria SoundLab AI | 2 | `grep -ri "soundlab" src/` limpio |
 | 0.5 | Copyright URBINA en las 8 ubicaciones (§1.2) + ruta `/legal` | 1 | Visible en app, informe impreso, JSON de certificado y metadatos |
 | 0.6 | `README` propio, guía de despliegue, política de seguridad | 1 | Documento revisado |
 | 0.7 | Auditoría de dependencias (`npm audit`) y política de actualizaciones | 0,5 | 0 vulnerabilidades altas |

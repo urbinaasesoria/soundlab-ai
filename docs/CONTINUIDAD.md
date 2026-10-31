@@ -11,7 +11,7 @@
 ## 0. Cómo retomar en 60 segundos
 
 ```powershell
-cd D:\OpenCode\OpenREA\re-narmia
+cd D:\OpenCode\OpenREA\soundlab-ai
 npm run dev          # app en http://localhost:5180
 npm run ai:proxy     # proxy de IA en http://localhost:8787 (necesita .env.local)
 npm run ai:check     # verifica la conexión con Gemini de extremo a extremo

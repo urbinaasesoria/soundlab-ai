@@ -13,7 +13,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useStudio } from "../lib/storage/store";
-import { COST, type ScanRecord } from "../lib/storage/types";
+import { COST } from "../lib/storage/types";
 import type { AnalysisResult } from "../lib/audio/analyzer";
 import { GENRE_TARGETS, type GenreTarget } from "../lib/data/genres";
 import { formatDate, formatDuration, formatNumber } from "../lib/utils";

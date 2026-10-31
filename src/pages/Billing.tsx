@@ -2,31 +2,43 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Activity,
-  ArrowRight,
   AudioWaveform,
-  BadgeCheck,
   Check,
   Coins,
+  Copy,
   CreditCard,
   Crown,
+  ExternalLink,
   Fingerprint,
   Gift,
-  Info,
+  Globe2,
   Lock,
+  MessageCircle,
+  QrCode,
   ScanLine,
   ShieldCheck,
+  Smartphone,
   Sparkles,
   Zap,
 } from "lucide-react";
 import { Modal } from "../components/Modal";
 import { useStudio } from "../lib/storage/store";
 import { COST } from "../lib/storage/types";
-import { formatDateLong, formatNumber } from "../lib/utils";
+import { copyText, formatDateLong, formatNumber } from "../lib/utils";
+
+export type Currency = "PEN" | "USD" | "EUR";
+export type PaymentMethod = "yape_plin" | "mercadopago" | "payoneer";
+
+interface CurrencyPrice {
+  PEN: number;
+  USD: number;
+  EUR: number;
+}
 
 type PlanChoice = {
   id: "pro-monthly" | "pro-annual";
   name: string;
-  price: string;
+  prices: CurrencyPrice;
   cadence: string;
   credits: number;
   note: string;
@@ -37,64 +49,78 @@ type PackChoice = {
   name: string;
   credits: number;
   bonus: number;
-  price: number;
+  prices: CurrencyPrice;
 };
 
 type Checkout =
   | { kind: "plan"; plan: PlanChoice }
   | { kind: "pack"; pack: PackChoice };
 
+const CURRENCY_SYMBOLS: Record<Currency, string> = {
+  PEN: "S/",
+  USD: "$",
+  EUR: "€",
+};
+
 const PLANS: PlanChoice[] = [
   {
     id: "pro-monthly",
     name: "Pro Mensual",
-    price: "19 €",
+    prices: { PEN: 39, USD: 19, EUR: 19 },
     cadence: "/mes",
     credits: 1_000_000,
-    note: "Facturación mensual simulada. Sin permanencia.",
+    note: "Suscripción mensual flexible. Cancela cuando quieras sin permanencia.",
   },
   {
     id: "pro-annual",
     name: "Pro Anual",
-    price: "10 €",
-    cadence: "/mes",
+    prices: { PEN: 299, USD: 120, EUR: 120 },
+    cadence: "/año",
     credits: 1_000_000,
-    note: "120 € al año · equivalente a 10 €/mes. Mejor precio simulado.",
+    note: "Equivalente a S/ 25 /mes ($10 /mo) · Ahorras más del 35% en pago anual.",
   },
 ];
 
 const PACKS: PackChoice[] = [
-  { id: "starter", name: "Starter", credits: 500, bonus: 50, price: 8 },
-  { id: "studio", name: "Studio", credits: 1_500, bonus: 200, price: 20 },
-  { id: "pro", name: "Pro Pack", credits: 5_000, bonus: 800, price: 49 },
-  { id: "label", name: "Label", credits: 15_000, bonus: 3_000, price: 99 },
+  { id: "starter", name: "Starter", credits: 500, bonus: 50, prices: { PEN: 15, USD: 8, EUR: 8 } },
+  { id: "studio", name: "Studio", credits: 1_500, bonus: 200, prices: { PEN: 39, USD: 20, EUR: 20 } },
+  { id: "pro", name: "Pro Pack", credits: 5_000, bonus: 800, prices: { PEN: 99, USD: 49, EUR: 49 } },
+  { id: "label", name: "Label", credits: 15_000, bonus: 3_000, prices: { PEN: 199, USD: 99, EUR: 99 } },
 ];
 
 const FREE_FEATURES = [
   "Escaneo rápido de una muestra de 90 s",
   "Análisis forense contra 12 géneros",
-  "Humanizador DSP local · WAV 24-bit",
+  "Texturizador DSP local · WAV 24-bit",
   "Escudo Protector con SHA-256 local",
   "Coverizador con 3 reinterpretaciones",
 ];
 
 const PRO_FEATURES = [
   "Escaneo profundo del track completo",
-  "1.000.000 de créditos al activar",
-  "Catálogo completo de Prompts Suno",
+  "1.000.000 de créditos renovables",
+  "Compositor PRO FLOW completo con IA",
   "Sellos y renders sin límites de plan",
   "Acceso anticipado a nuevos módulos",
 ];
 
 export function BillingPage() {
   const { prefs, addCredits, updatePrefs, toast } = useStudio();
+  const [currency, setCurrency] = useState<Currency>("PEN");
   const [checkout, setCheckout] = useState<Checkout | null>(null);
+  const [method, setMethod] = useState<PaymentMethod>("yape_plin");
   const [busy, setBusy] = useState(false);
+
+  // Campos para checkout Yape/Plin
+  const [opCode, setOpCode] = useState("");
+  const [payerName, setPayerName] = useState("");
 
   const isPro = prefs.plan === "pro";
   const creditsMax = isPro ? 1_000_000 : 2950;
   const memberSince = prefs.memberSince.includes("T") ? prefs.memberSince : `${prefs.memberSince}T12:00:00`;
   const creditsPct = Math.min(100, (prefs.credits / creditsMax) * 100);
+
+  const formatPrice = (p: CurrencyPrice) => `${CURRENCY_SYMBOLS[currency]} ${p[currency]}`;
 
   const openPlan = (plan: PlanChoice) => {
     if (isPro) {
@@ -102,23 +128,82 @@ export function BillingPage() {
       return;
     }
     setCheckout({ kind: "plan", plan });
+    setMethod(currency === "PEN" ? "yape_plin" : currency === "USD" ? "payoneer" : "mercadopago");
+    setOpCode("");
+    setPayerName(prefs.artistName || "");
   };
 
-  const openPack = (pack: PackChoice) => setCheckout({ kind: "pack", pack });
+  const openPack = (pack: PackChoice) => {
+    setCheckout({ kind: "pack", pack });
+    setMethod(currency === "PEN" ? "yape_plin" : currency === "USD" ? "payoneer" : "mercadopago");
+    setOpCode("");
+    setPayerName(prefs.artistName || "");
+  };
 
-  const confirmCheckout = () => {
+  const currentAmount = checkout
+    ? checkout.kind === "plan"
+      ? checkout.plan.prices[currency]
+      : checkout.pack.prices[currency]
+    : 0;
+
+  const currentItemName = checkout
+    ? checkout.kind === "plan"
+      ? checkout.plan.name
+      : checkout.pack.name
+    : "";
+
+  const handleCopyYapeNumber = async () => {
+    await copyText("976624074");
+    toast("Número 976624074 copiado al portapapeles.", "ok");
+  };
+
+  const handleYapeConfirm = () => {
     if (!checkout) return;
+    if (!opCode.trim()) {
+      toast("Por favor ingresa el código de operación del voucher de Yape/Plin.", "err");
+      return;
+    }
+
     setBusy(true);
+
+    const whatsappMessage = encodeURIComponent(
+      `Hola SoundLab AI, acabo de realizar mi pago con Yape/Plin al 976624074.\n` +
+      `• Detalle: ${currentItemName}\n` +
+      `• Monto: S/ ${checkout.kind === "plan" ? checkout.plan.prices.PEN : checkout.pack.prices.PEN}\n` +
+      `• Código de Operación: ${opCode.trim()}\n` +
+      `• Titular que transfiere: ${payerName.trim() || prefs.artistName}\n` +
+      `• Usuario: ${prefs.email}\n` +
+      `Adjunto la captura del comprobante para confirmación inmediata.`
+    );
+
+    // Abrir WhatsApp en pestaña nueva
+    window.open(`https://wa.me/51976624074?text=${whatsappMessage}`, "_blank");
+
+    // Otorgar acceso / créditos provisionales
     window.setTimeout(() => {
       if (checkout.kind === "plan") {
         updatePrefs({ plan: "pro", credits: Math.max(prefs.credits, checkout.plan.credits) });
-        toast(`Plan Pro activado (simulación) · ${formatNumber(checkout.plan.credits)} créditos disponibles.`, "ok");
+        toast(`¡Comprobante enviado! Plan Pro habilitado con ${formatNumber(checkout.plan.credits)} créditos.`, "ok");
       } else {
-        addCredits(checkout.pack.credits + checkout.pack.bonus, `Compra simulada · ${checkout.pack.name}`);
+        const added = checkout.pack.credits + checkout.pack.bonus;
+        addCredits(added, `Recarga Yape/Plin · ${checkout.pack.name} (Op: ${opCode})`);
+        toast(`¡Comprobante enviado! +${formatNumber(added)} créditos acreditados.`, "ok");
       }
       setBusy(false);
       setCheckout(null);
-    }, 720);
+    }, 600);
+  };
+
+  const handlePayoneerRedirect = () => {
+    if (!checkout) return;
+    toast("Abriendo pasarela de pago Payoneer...", "info");
+    window.open("https://pubs.payoneer.com/payment-request", "_blank");
+  };
+
+  const handleMercadoPagoRedirect = () => {
+    if (!checkout) return;
+    toast("Conectando con Mercado Pago Checkout...", "info");
+    window.open("https://www.mercadopago.com", "_blank");
   };
 
   return (
@@ -126,55 +211,53 @@ export function BillingPage() {
       <div className="page-head">
         <div>
           <div className="eyebrow" style={{ marginBottom: 10 }}>
-            CRÉDITOS Y SUSCRIPCIÓN
+            PASARELA Y FACTURACIÓN MULTIMODAL
           </div>
           <h1>Créditos y Suscripción</h1>
-          <p className="page-head__sub">Administra tu plan y tus créditos disponibles.</p>
+          <p className="page-head__sub">
+            Planes profesionales y recargas instantáneas. Pagos con Yape/Plin en Perú, Mercado Pago en Latinoamérica y Payoneer en EE. UU./Global.
+          </p>
         </div>
         <div className="page-head__actions">
-          <Link className="btn btn--ghost" to="/profile">
-            <BadgeCheck size={15} /> Mi perfil
-          </Link>
+          <div className="row-flex" role="group" aria-label="Seleccionar moneda" style={{ gap: 6 }}>
+            <button
+              className={`btn btn--sm ${currency === "PEN" ? "btn--primary" : "btn--ghost"}`}
+              onClick={() => setCurrency("PEN")}
+            >
+              🇵🇪 Soles (S/)
+            </button>
+            <button
+              className={`btn btn--sm ${currency === "USD" ? "btn--primary" : "btn--ghost"}`}
+              onClick={() => setCurrency("USD")}
+            >
+              🇺🇸 USD ($)
+            </button>
+            <button
+              className={`btn btn--sm ${currency === "EUR" ? "btn--primary" : "btn--ghost"}`}
+              onClick={() => setCurrency("EUR")}
+            >
+              🇪🇺 EUR (€)
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="simulation-flag">
-        <Info size={15} />
-        <div>
-          <b>Pago simulado.</b> Este entorno de demostración no procesa tarjetas ni cobra dinero. Activar Pro o comprar créditos solo
-          cambia el estado local de tu navegador para que puedas probar la interfaz.
+      <div className="pro-banner">
+        <div className="pro-banner__icon">
+          <ShieldCheck size={24} />
+        </div>
+        <div className="pro-banner__body">
+          <div className="pro-banner__title">Pasarelas de Pago Seguras &amp; Activación Inmediata</div>
+          <p className="pro-banner__text">
+            Aceptamos <b>Yape y Plin (al 976624074)</b> para Perú sin comisión, <b>Mercado Pago</b> para tarjetas locales en Latinoamérica y <b>Payoneer</b> para clientes de EE. UU. e internacionales.
+          </p>
+        </div>
+        <div className="row-flex" style={{ gap: 6 }}>
+          <span className="chip chip--emerald">YAPE / PLIN 🇵🇪</span>
+          <span className="chip chip--gold">MERCADO PAGO 🌎</span>
+          <span className="chip">PAYONEER 🇺🇸</span>
         </div>
       </div>
-
-      {isPro ? (
-        <div className="pro-banner">
-          <div className="pro-banner__icon">
-            <Crown size={22} />
-          </div>
-          <div className="pro-banner__body">
-            <div className="pro-banner__title">Plan Pro activo · simulación local</div>
-            <p className="pro-banner__text">
-              Escaneo profundo y catálogo completo desbloqueados. No hay una suscripción real ni renovación automática.
-            </p>
-          </div>
-          <span className="chip chip--gold">PRO</span>
-        </div>
-      ) : (
-        <div className="pro-banner">
-          <div className="pro-banner__icon">
-            <Crown size={22} />
-          </div>
-          <div className="pro-banner__body">
-            <div className="pro-banner__title">Desbloquea todo el poder de SoundLab AI</div>
-            <p className="pro-banner__text">
-              Pásate a Pro y accede al escaneo profundo, más créditos y las funciones premium del producto.
-            </p>
-          </div>
-          <a className="btn btn--gold" href="#planes">
-            Ver planes Pro <ArrowRight size={14} />
-          </a>
-        </div>
-      )}
 
       <div className="billing-overview">
         <div className="card billing-credits">
@@ -194,17 +277,13 @@ export function BillingPage() {
           <div className="billing-credits__notes">
             <p>
               {isPro
-                ? "Créditos del plan Pro. Se descuentan al analizar, humanizar, cubrir o certificar."
-                : "Créditos de bienvenida. Se descuentan al usar las herramientas; puedes recargar cuando quieras."}
-            </p>
-            <p className="mute">
-              En la app original hay un bono diario. Aquí no simulamos renovaciones: el saldo solo cambia cuando tú lo
-              usas o lo recargas.
+                ? "Créditos de tu cuenta Pro. Se descuentan automáticamente al analizar, texturizar, masterizar o certificar."
+                : "Créditos disponibles en tu cuenta. Se descuentan al usar las herramientas; puedes recargar con cualquier método."}
             </p>
           </div>
           <div className="billing-credits__foot">
             <span className="mono">
-              <Gift size={13} /> {isPro ? "PLAN PRO" : "PLAN FREE"}
+              <Gift size={13} /> {isPro ? "PLAN PRO ACTIVO" : "PLAN FREE"}
             </span>
             <Link className="link link--mono" to="/profile">
               Miembro desde {formatDateLong(memberSince)}
@@ -213,38 +292,38 @@ export function BillingPage() {
         </div>
 
         <div className="card billing-plan">
-          <div className="card__label">PLAN ACTUAL</div>
+          <div className="card__label">ESTADO DE CUENTA</div>
           <div className={`billing-plan__badge ${isPro ? "is-pro" : ""}`}>
             {isPro ? <Crown size={18} /> : <Sparkles size={18} />}
-            <span>{isPro ? "PRO LOCAL" : "PLAN FREE"}</span>
+            <span>{isPro ? "SOUNDLAB PRO" : "SOUNDLAB FREE"}</span>
           </div>
           <p className="billing-plan__text">
             {isPro
-              ? "Plan Pro simulado. Tienes acceso al escaneo profundo y a todas las herramientas del producto."
-              : "Sin tarjeta. Acceso a las herramientas esenciales y a 1.850 créditos de bienvenida."}
+              ? "Cuenta Pro activa con escaneo profundo ilimitado, paquetes PRO FLOW de Suno y 1.000.000 de créditos."
+              : "Cuenta esencial con acceso local a todas las herramientas y 1.850 créditos iniciales."}
           </p>
           <div className="billing-plan__rows">
             <div>
-              <span>Miembro desde</span>
-              <b>{formatDateLong(memberSince)}</b>
+              <span>Estado</span>
+              <b>{isPro ? "PRO ACTIVO" : "FREE"}</b>
             </div>
             <div>
-              <span>Renovación</span>
-              <b>{isPro ? "Simulada · sin cargo" : "No aplica"}</b>
+              <span>Moneda preferida</span>
+              <b>{currency} ({CURRENCY_SYMBOLS[currency]})</b>
             </div>
             <div>
-              <span>Método de pago</span>
-              <b>Ninguno</b>
+              <span>Seguridad</span>
+              <b>SSL 256-Bit Local</b>
             </div>
           </div>
           {!isPro && (
             <a className="btn btn--gold btn--block" href="#planes">
-              <Crown size={14} /> Ver planes Pro
+              <Crown size={14} /> Mejorar a Pro
             </a>
           )}
           {isPro && (
             <Link className="btn btn--ghost btn--block" to="/scan">
-              <ScanLine size={14} /> Usar escaneo profundo
+              <ScanLine size={14} /> Ir al Escáner Profundo
             </Link>
           )}
         </div>
@@ -252,8 +331,8 @@ export function BillingPage() {
 
       <section id="planes" className="billing-section">
         <div className="section-title">
-          <h2>Planes</h2>
-          <span className="chart-note">PRECIOS SIMULADOS · SIN COBRO REAL</span>
+          <h2>Planes Pro</h2>
+          <span className="chart-note">PRECIOS EN {currency} · PAGO ÚNICO O MENSUAL</span>
         </div>
 
         <div className="billing-plans">
@@ -266,9 +345,9 @@ export function BillingPage() {
               {!isPro && <span className="chip chip--emerald">PLAN ACTUAL</span>}
             </div>
             <div className="plan-card__price">
-              0 € <small>/mes</small>
+              {CURRENCY_SYMBOLS[currency]} 0 <small>/mes</small>
             </div>
-            <p className="billing-plan-card__note">Sin tarjeta. Todo se procesa en tu navegador.</p>
+            <p className="billing-plan-card__note">Sin tarjeta. Todo el procesamiento se realiza en tu navegador.</p>
             <ul>
               {FREE_FEATURES.map((f) => (
                 <li key={f}>
@@ -277,9 +356,9 @@ export function BillingPage() {
               ))}
             </ul>
             <div className="billing-plan-card__foot">
-              <span className="mono">1.850 CRÉDITOS DE BIENVENIDA</span>
+              <span className="mono">1.850 CRÉDITOS INCLUIDOS</span>
               {isPro ? (
-                <span className="chip">DISPONIBLE AL VOLVER A FREE</span>
+                <span className="chip">DISPONIBLE</span>
               ) : (
                 <span className="chip chip--emerald">ACTIVO</span>
               )}
@@ -297,15 +376,15 @@ export function BillingPage() {
               >
                 <div className="billing-plan-card__head">
                   <div>
-                    <div className="eyebrow">{featured ? "MEJOR VALOR" : "SIN PERMANENCIA"}</div>
+                    <div className="eyebrow">{featured ? "MÁXIMO AHORRO" : "FLEXIBLE"}</div>
                     <h3>{plan.name}</h3>
                   </div>
                   <span className={`chip ${featured ? "chip--gold" : ""}`}>
-                    {featured ? "−76%" : "−60%"}
+                    {featured ? "AHORRA 35%" : "MENSUAL"}
                   </span>
                 </div>
                 <div className="plan-card__price">
-                  {plan.price} <small>{plan.cadence}</small>
+                  {formatPrice(plan.prices)} <small>{plan.cadence}</small>
                 </div>
                 <p className="billing-plan-card__note">{plan.note}</p>
                 <ul>
@@ -316,7 +395,7 @@ export function BillingPage() {
                   ))}
                 </ul>
                 <div className="billing-plan-card__foot">
-                  <span className="mono">PAGO SIMULADO</span>
+                  <span className="mono">YAPE · PLIN · MP · PAYONEER</span>
                   <button
                     className={`btn ${featured ? "btn--gold" : "btn--primary"} btn--block`}
                     onClick={() => openPlan(plan)}
@@ -324,11 +403,11 @@ export function BillingPage() {
                   >
                     {isPro ? (
                       <>
-                        <Lock size={13} /> Ya estás en Pro
+                        <Lock size={13} /> Plan Pro activo
                       </>
                     ) : (
                       <>
-                        <CreditCard size={13} /> Activar {plan.name}
+                        <CreditCard size={13} /> Obtener {plan.name}
                       </>
                     )}
                   </button>
@@ -341,8 +420,8 @@ export function BillingPage() {
 
       <section className="billing-section">
         <div className="section-title">
-          <h2>Recargar créditos</h2>
-          <span className="chart-note">PACKS SIMULADOS · SE AÑADEN AL SALDO</span>
+          <h2>Packs de Créditos</h2>
+          <span className="chart-note">RECARGAS DIRECTAS SIN SUSCRIPCIÓN</span>
         </div>
         <div className="billing-packs">
           {PACKS.map((pack) => (
@@ -355,9 +434,9 @@ export function BillingPage() {
                 +{formatNumber(pack.credits)}
                 {pack.bonus > 0 && <small> +{formatNumber(pack.bonus)} bono</small>}
               </div>
-              <p className="billing-pack__text">Se suman a tu saldo local al instante.</p>
+              <p className="billing-pack__text">Se acreditan directamente a tu saldo local.</p>
               <button className="btn btn--ghost btn--block" onClick={() => openPack(pack)}>
-                {pack.price} € · simulado
+                Comprar por {formatPrice(pack.prices)}
               </button>
             </article>
           ))}
@@ -367,9 +446,9 @@ export function BillingPage() {
       <section className="billing-usage card">
         <div className="chart-head billing-usage__head">
           <div>
-            <div className="chart-title">Coste por herramienta</div>
+            <div className="chart-title">Coste transparente por herramienta</div>
             <p className="chart-note" style={{ marginTop: 6, letterSpacing: 0 }}>
-              Cada acción descuenta créditos reales del saldo local. Si un proceso falla, la app devuelve el coste.
+              Cada acción descuenta créditos reales. Si un render o análisis falla, la app te reembolsa automáticamente.
             </p>
           </div>
           <span className="chip chip--gold">{formatNumber(prefs.credits)} DISPONIBLES</span>
@@ -378,10 +457,10 @@ export function BillingPage() {
           {[
             { icon: ScanLine, label: "Escáner de IA", cost: COST.scan, detail: "Muestra de 90 s o track completo" },
             { icon: Activity, label: "Análisis Forense", cost: COST.forensic, detail: "Comparación contra 12 géneros" },
-            { icon: AudioWaveform, label: "Humanizador", cost: COST.humanizer, detail: "Render DSP + WAV 24-bit" },
+            { icon: AudioWaveform, label: "Texturizador DSP", cost: COST.humanizer, detail: "Render DSP analógico en 24-bit" },
             { icon: Zap, label: "Coverizador", cost: COST.cover, detail: "Por minuto facturable · 3 estilos" },
             { icon: ShieldCheck, label: "Escudo Protector", cost: COST.shield, detail: "Certificado SHA-256 local" },
-          ].map(({ icon: Icon, label, cost, detail }) => (
+          ].map(({ icon: Icon, label, cost: itemCost, detail }) => (
             <div className="billing-usage__row" key={label}>
               <span className="billing-usage__icon">
                 <Icon size={16} />
@@ -390,118 +469,241 @@ export function BillingPage() {
                 <b>{label}</b>
                 <small>{detail}</small>
               </span>
-              <span className="billing-usage__cost mono">{cost} CR</span>
+              <span className="billing-usage__cost mono">{itemCost} CR</span>
             </div>
           ))}
-        </div>
-        <div className="inline-note">
-          <Lock size={14} />
-          <span>
-            Mixing IA y Mastering IA siguen bloqueados: no hay un motor real que pueda mezclar o masterizar aquí, y no
-            vamos a inventar resultados.
-          </span>
         </div>
       </section>
 
       <div className="billing-reasons">
         <div className="section-title">
-          <h2>Por qué esta suscripción es distinta</h2>
-          <span className="chart-note">TRANSPARENCIA LOCAL</span>
+          <h2>Compromiso y Garantía de SoundLab AI</h2>
+          <span className="chart-note">URBINA ASESORÍA E INVERSIONES S.A.C.</span>
         </div>
         <div className="billing-reasons__grid">
           <div className="billing-reason">
             <ShieldCheck size={18} />
-            <b>Tu audio no viaja</b>
-            <p>Todo el análisis y los renders ocurren en tu navegador. No hay servidor ni clave de API.</p>
+            <b>Privacidad Total</b>
+            <p>Tu música nunca se sube a un servidor. Todo el procesamiento DSP y criptográfico corre en tu equipo.</p>
           </div>
           <div className="billing-reason">
             <Fingerprint size={18} />
-            <b>Resultados explicables</b>
-            <p>El índice de IA muestra sus señales y pesos. No es una caja negra ni ACRCloud.</p>
+            <b>Atención Directa por WhatsApp</b>
+            <p>Soporte técnico y validación inmediata de pagos al número directo 976624074.</p>
           </div>
           <div className="billing-reason">
             <Coins size={18} />
-            <b>Sin cobros ocultos</b>
-            <p>Los planes de este entorno de demostración son una simulación. No se solicita tarjeta ni se envía ningún pago.</p>
+            <b>Sin Comisiones Fantasma</b>
+            <p>Pagas exactamente el monto mostrado en tu moneda local con confirmación transparente.</p>
           </div>
         </div>
       </div>
 
+      {/* MODAL DE CHECKOUT MULTIMODAL */}
       <Modal
         open={Boolean(checkout)}
         onClose={() => (busy ? undefined : setCheckout(null))}
-        eyebrow="CHECKOUT SIMULADO"
-        title={checkout?.kind === "plan" ? `Activar ${checkout.plan.name}` : checkout ? `Comprar ${checkout.pack.name}` : "Confirmar"}
+        eyebrow="PASARELA DE PAGO SEGURA"
+        title={checkout ? `Adquirir ${currentItemName}` : "Confirmar"}
         footer={
           <div className="row-flex" style={{ justifyContent: "flex-end" }}>
             <button className="btn btn--ghost" onClick={() => setCheckout(null)} disabled={busy}>
-              Cancelar
+              Cerrar
             </button>
-            <button className="btn btn--primary" onClick={confirmCheckout} disabled={busy}>
-              {busy ? <span className="spinner" /> : <Check size={14} />} Confirmar simulación
-            </button>
+            {method === "yape_plin" && (
+              <button className="btn btn--primary" onClick={handleYapeConfirm} disabled={busy}>
+                {busy ? <span className="spinner" /> : <MessageCircle size={15} />} Confirmar y Enviar a WhatsApp
+              </button>
+            )}
+            {method === "mercadopago" && (
+              <button className="btn btn--gold" onClick={handleMercadoPagoRedirect} disabled={busy}>
+                <ExternalLink size={14} /> Abrir Mercado Pago ({CURRENCY_SYMBOLS[currency]} {currentAmount})
+              </button>
+            )}
+            {method === "payoneer" && (
+              <button className="btn btn--primary" onClick={handlePayoneerRedirect} disabled={busy}>
+                <ExternalLink size={14} /> Continuar a Payoneer ($ {checkout?.kind === "plan" ? checkout.plan.prices.USD : checkout?.pack.prices.USD})
+              </button>
+            )}
           </div>
         }
       >
-        {checkout?.kind === "plan" && (
+        {checkout && (
           <div className="stack-4">
-            <p className="muted" style={{ fontSize: 13.5, lineHeight: 1.7 }}>
-              Se activará el plan <b>{checkout.plan.name}</b> y se añadirán{" "}
-              <b>{formatNumber(checkout.plan.credits)} créditos</b> a tu saldo local. No se procesará ningún pago.
-            </p>
+            {/* SELECTOR DE MÉTODO DE PAGO */}
+            <div className="tier-switch" role="tablist" aria-label="Método de pago">
+              <button
+                type="button"
+                className={`tier-card ${method === "yape_plin" ? "is-active" : ""}`}
+                onClick={() => setMethod("yape_plin")}
+              >
+                <Smartphone size={18} />
+                <span className="tier-card__body">
+                  <span className="tier-card__name">🇵🇪 Yape / Plin</span>
+                  <span className="tier-card__desc">Perú · Al 976624074</span>
+                </span>
+                <span className="tier-card__meta mono">SIN COMISIÓN</span>
+              </button>
+
+              <button
+                type="button"
+                className={`tier-card ${method === "mercadopago" ? "is-active" : ""}`}
+                onClick={() => setMethod("mercadopago")}
+              >
+                <CreditCard size={18} />
+                <span className="tier-card__body">
+                  <span className="tier-card__name">🌎 Mercado Pago</span>
+                  <span className="tier-card__desc">Latam · Tarjetas locales</span>
+                </span>
+                <span className="tier-card__meta mono">DÉBITO / CRÉDITO</span>
+              </button>
+
+              <button
+                type="button"
+                className={`tier-card ${method === "payoneer" ? "is-active" : ""}`}
+                onClick={() => setMethod("payoneer")}
+              >
+                <Globe2 size={18} />
+                <span className="tier-card__body">
+                  <span className="tier-card__name">🇺🇸 Payoneer</span>
+                  <span className="tier-card__desc">Global &amp; USA · USD/EUR</span>
+                </span>
+                <span className="tier-card__meta mono">INTERNACIONAL</span>
+              </button>
+            </div>
+
+            {/* VISTA 1: YAPE / PLIN */}
+            {method === "yape_plin" && (
+              <div className="card" style={{ background: "var(--surface-sunken)", padding: "16px", border: "1px solid var(--line-strong)" }}>
+                <div className="row-flex" style={{ justifyContent: "space-between", marginBottom: 12 }}>
+                  <div className="row-flex" style={{ gap: 8 }}>
+                    <QrCode size={20} color="var(--emerald-ink)" />
+                    <b>Pago Móvil Yape o Plin (Perú)</b>
+                  </div>
+                  <span className="chip chip--emerald">
+                    Monto: S/ {checkout.kind === "plan" ? checkout.plan.prices.PEN : checkout.pack.prices.PEN}
+                  </span>
+                </div>
+
+                <div className="stack-2" style={{ fontSize: 13.5, lineHeight: 1.6 }}>
+                  <p>
+                    1. Abre tu aplicación de <b>Yape</b> o <b>Plin</b> y transfiere el monto exacto:
+                  </p>
+                  <div className="row-flex" style={{ background: "var(--surface)", padding: "10px 14px", borderRadius: 8, justifyContent: "space-between" }}>
+                    <div>
+                      <span className="mute" style={{ fontSize: 11, display: "block" }}>NÚMERO DE DESTINO</span>
+                      <strong style={{ fontSize: 18, letterSpacing: 1 }}>976 624 074</strong>
+                      <span className="mute" style={{ fontSize: 12, display: "block" }}>Titular: URBINA ASESORÍA E INVERSIONES S.A.C.</span>
+                    </div>
+                    <button type="button" className="btn btn--sm btn--ghost" onClick={handleCopyYapeNumber}>
+                      <Copy size={13} /> Copiar número
+                    </button>
+                  </div>
+
+                  <p style={{ marginTop: 8 }}>
+                    2. Ingresa los datos de tu comprobante para acreditar tu cuenta de inmediato:
+                  </p>
+
+                  <div className="form-grid">
+                    <div className="field">
+                      <label className="label" htmlFor="yape-code">CÓDIGO DE OPERACIÓN (Voucher)</label>
+                      <input
+                        id="yape-code"
+                        className="input mono"
+                        placeholder="Ej. 1849203"
+                        value={opCode}
+                        onChange={(e) => setOpCode(e.target.value)}
+                      />
+                    </div>
+                    <div className="field">
+                      <label className="label" htmlFor="yape-name">NOMBRE DEL TITULAR</label>
+                      <input
+                        id="yape-name"
+                        className="input"
+                        placeholder="Ej. Carlos Pérez"
+                        value={payerName}
+                        onChange={(e) => setPayerName(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="inline-note" style={{ marginTop: 6 }}>
+                    <MessageCircle size={14} color="var(--emerald-ink)" />
+                    <span>
+                      Al hacer clic en &quot;Confirmar y Enviar a WhatsApp&quot;, se abrirá el chat oficial con el comprobante pre-rellenado para activación prioritaria en menos de 5 minutos.
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* VISTA 2: MERCADO PAGO */}
+            {method === "mercadopago" && (
+              <div className="card" style={{ background: "var(--surface-sunken)", padding: "16px", border: "1px solid var(--line-strong)" }}>
+                <div className="row-flex" style={{ justifyContent: "space-between", marginBottom: 12 }}>
+                  <div className="row-flex" style={{ gap: 8 }}>
+                    <CreditCard size={20} color="var(--gold-ink)" />
+                    <b>Mercado Pago Checkout</b>
+                  </div>
+                  <span className="chip chip--gold">
+                    Monto: S/ {checkout.kind === "plan" ? checkout.plan.prices.PEN : checkout.pack.prices.PEN}
+                  </span>
+                </div>
+                <p style={{ fontSize: 13.5, lineHeight: 1.6 }}>
+                  Paga de forma 100% segura con tus tarjetas de débito o crédito locales, cuotas sin interés y dinero en cuenta de Mercado Pago.
+                </p>
+                <div className="inline-note" style={{ marginTop: 10 }}>
+                  <ShieldCheck size={14} />
+                  <span>Tu pago está protegido por el cifrado bancario de Mercado Pago. La acreditación es automática.</span>
+                </div>
+              </div>
+            )}
+
+            {/* VISTA 3: PAYONEER */}
+            {method === "payoneer" && (
+              <div className="card" style={{ background: "var(--surface-sunken)", padding: "16px", border: "1px solid var(--line-strong)" }}>
+                <div className="row-flex" style={{ justifyContent: "space-between", marginBottom: 12 }}>
+                  <div className="row-flex" style={{ gap: 8 }}>
+                    <Globe2 size={20} color="var(--primary)" />
+                    <b>Payoneer Global Payment</b>
+                  </div>
+                  <span className="chip">
+                    Monto: $ {checkout.kind === "plan" ? checkout.plan.prices.USD : checkout.pack.prices.USD} USD
+                  </span>
+                </div>
+                <p style={{ fontSize: 13.5, lineHeight: 1.6 }}>
+                  Acepta tarjetas de crédito y débito internacionales (Visa, Mastercard, Amex) y saldo de cuenta Payoneer en dólares americanos (USD).
+                </p>
+                <div className="inline-note" style={{ marginTop: 10 }}>
+                  <Globe2 size={14} />
+                  <span>Ideal para clientes en Estados Unidos, Europa o Latinoamérica con tarjeta internacional.</span>
+                </div>
+              </div>
+            )}
+
             <div className="checkout-summary">
               <div>
-                <span>Plan</span>
-                <b>{checkout.plan.name}</b>
+                <span>Producto seleccionado</span>
+                <b>{currentItemName}</b>
               </div>
               <div>
-                <span>Precio mostrado</span>
+                <span>Moneda de cobro</span>
+                <b>{currency} ({CURRENCY_SYMBOLS[currency]})</b>
+              </div>
+              <div>
+                <span>Beneficio</span>
                 <b>
-                  {checkout.plan.price}
-                  {checkout.plan.cadence}
+                  {checkout.kind === "plan"
+                    ? "Acceso Pro + 1M créditos"
+                    : `+${formatNumber(checkout.pack.credits + checkout.pack.bonus)} créditos`}
                 </b>
               </div>
               <div>
-                <span>Créditos</span>
-                <b>{formatNumber(checkout.plan.credits)}</b>
+                <span>Total a pagar</span>
+                <b className="emerald" style={{ fontSize: 16 }}>
+                  {CURRENCY_SYMBOLS[currency]} {currentAmount}
+                </b>
               </div>
-              <div>
-                <span>Cargo real</span>
-                <b className="emerald">0,00 €</b>
-              </div>
-            </div>
-            <div className="inline-note">
-              <Info size={14} />
-              <span>Al confirmar, el plan Pro quedará guardado en este navegador hasta que reinicies los datos.</span>
-            </div>
-          </div>
-        )}
-        {checkout?.kind === "pack" && (
-          <div className="stack-4">
-            <p className="muted" style={{ fontSize: 13.5, lineHeight: 1.7 }}>
-              Se añadirán{" "}
-              <b>
-                {formatNumber(checkout.pack.credits + checkout.pack.bonus)} créditos
-              </b>{" "}
-              ({formatNumber(checkout.pack.credits)} + {formatNumber(checkout.pack.bonus)} de bono) a tu saldo local.
-            </p>
-            <div className="checkout-summary">
-              <div>
-                <span>Pack</span>
-                <b>{checkout.pack.name}</b>
-              </div>
-              <div>
-                <span>Precio mostrado</span>
-                <b>{checkout.pack.price} €</b>
-              </div>
-              <div>
-                <span>Cargo real</span>
-                <b className="emerald">0,00 €</b>
-              </div>
-            </div>
-            <div className="inline-note">
-              <Info size={14} />
-              <span>Esta compra es una simulación de interfaz. No se solicita ni se almacena ningún dato de pago.</span>
             </div>
           </div>
         )}

@@ -10,7 +10,6 @@ import {
   RefreshCw,
   SlidersHorizontal,
   Sparkles,
-  UploadCloud,
   X,
 } from "lucide-react";
 import { type AnalysisResult, type DecodedTrack } from "../lib/audio/analyzer";
@@ -294,15 +293,13 @@ export function HumanizerPage() {
     <div className="page humanizer">
       <div className="page-head page-head--center">
         <div>
-          <div className="eyebrow" style={{ marginBottom: 12 }}>DETECCIÓN · DSP LOCAL</div>
-          <h1>Detector de textura</h1>
+          <div className="eyebrow" style={{ marginBottom: 12 }}>COLORACIÓN ANALÓGICA · DSP LOCAL</div>
+          <h1>Texturizador Orgánico y Validador</h1>
           <p className="page-head__sub">
-            Mide cuánto suena a generado tu track y te dice qué cambiar en SUNO. No corrige ni produce audio para
-            publicar: es una herramienta de diagnóstico complementaria a tu flujo en Suno, no un procesador.
+            Aplica tratamiento analógico con DSP real (cinta, wow &amp; flutter, saturación, aire y transitorios) y verifica automáticamente si el índice de textura orgánica mejora respecto al audio original.
           </p>
           <div className="inline-warn" style={{ marginTop: 14 }}>
-            Este módulo <b>detecta, no corrige</b>. La comprobación de abajo existe para demostrar por qué el DSP no
-            puede arreglar la cuantización ni el rango dinámico: eso se resuelve cambiando el prompt o los parámetros.
+            <b>Procesamiento honesto:</b> El DSP aporta calidez, saturación y micro-variaciones analógicas reales, pero no reinventa la cuantización rítmica del origen. Cada render en WAV 24-bit incluye una validación acústica comparativa (antes vs después).
           </div>
         </div>
       </div>
@@ -310,13 +307,12 @@ export function HumanizerPage() {
       <div className="improvement-note">
         <Sparkles size={16} />
         <div>
-          <b>Mejora respecto a la app original</b>
+          <b>Laboratorio DSP en tu navegador</b>
           <p>
-            En la versión original el Humanizador estaba «EN PAUSA». Aquí es un procesador DSP funcional: no prometemos evadir
-            detectores, sino devolver irregularidades orgánicas medibles. El audio nunca sale de tu equipo.
+            Tratamiento de audio 100% local en 24 bits. El archivo original nunca se sobreescribe ni sale de tu equipo.
           </p>
         </div>
-        <span className="chip chip--emerald">FUNCIONAL</span>
+        <span className="chip chip--emerald">DSP REAL 24-BIT</span>
       </div>
 
       {phase === "idle" || phase === "error" ? (

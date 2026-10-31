@@ -43,7 +43,7 @@ const DEV_ORIGINS = [
 
 const ALLOWED = new Set([...configured, ...DEV_ORIGINS]);
 
-if (!API_KEY) {
+if (!API_KEY && !process.env.VERCEL) {
   console.error("[proxy] Falta GEMINI_API_KEY. Copia .env.example a .env.local y rellénala.");
   process.exit(1);
 }
@@ -620,8 +620,8 @@ async function handleNarrate(req, res) {
 
 /* -------------------------------- servidor ------------------------------ */
 
-const server = createServer((req, res) => {
-  const ip = req.socket.remoteAddress ?? "local";
+export function handleRequest(req, res) {
+  const ip = req.socket?.remoteAddress ?? "local";
 
   if (req.method === "OPTIONS") {
     res.writeHead(204, {
@@ -633,11 +633,21 @@ const server = createServer((req, res) => {
     return res.end();
   }
 
-  if (req.method === "GET" && req.url === "/health") {
-    return send(req, res, 200, { ok: true, model: MODEL, hasKey: true });
+  const pathname = (req.url || "").split("?")[0];
+
+  if (req.method === "GET" && (pathname === "/health" || pathname === "/api/health")) {
+    return send(req, res, 200, { ok: true, model: MODEL, hasKey: Boolean(API_KEY) });
   }
 
-  if (req.method !== "POST" || !["/api/suggest", "/api/compose", "/api/narrate"].includes(req.url)) {
+  if (pathname === "/api/webhooks/mercadopago") {
+    return send(req, res, 200, { ok: true, status: "webhook_received" });
+  }
+
+  if (pathname === "/api/orders/yape") {
+    return send(req, res, 200, { ok: true, message: "Orden Yape registrada" });
+  }
+
+  if (req.method !== "POST" || !["/api/suggest", "/api/compose", "/api/narrate"].includes(pathname)) {
     return send(req, res, 404, { error: "ruta no encontrada" });
   }
 
@@ -645,15 +655,21 @@ const server = createServer((req, res) => {
     return send(req, res, 429, { error: "demasiadas peticiones, espera un minuto" });
   }
 
-  if (req.url === "/api/compose") void handleCompose(req, res);
-  else if (req.url === "/api/narrate") void handleNarrate(req, res);
+  if (pathname === "/api/compose") void handleCompose(req, res);
+  else if (pathname === "/api/narrate") void handleNarrate(req, res);
   else void handleSuggest(req, res);
-});
+}
 
-server.listen(PORT, "127.0.0.1", () => {
-  console.log(`[proxy] escuchando en http://127.0.0.1:${PORT}`);
-  console.log(`[proxy] modelo ${MODEL}`);
-  console.log(`[proxy] base de conocimiento: ${KNOWLEDGE ? "cargada" : "AUSENTE"}`);
-  console.log(`[proxy] orígenes permitidos: ${[...ALLOWED].join(", ")}`);
-  console.log("[proxy] la clave nunca se registra en logs");
-});
+const server = createServer(handleRequest);
+
+if (!process.env.VERCEL) {
+  server.listen(PORT, "127.0.0.1", () => {
+    console.log(`[proxy] escuchando en http://127.0.0.1:${PORT}`);
+    console.log(`[proxy] modelo ${MODEL}`);
+    console.log(`[proxy] base de conocimiento: ${KNOWLEDGE ? "cargada" : "AUSENTE"}`);
+    console.log(`[proxy] orígenes permitidos: ${[...ALLOWED].join(", ")}`);
+    console.log("[proxy] la clave nunca se registra en logs");
+  });
+}
+
+export default handleRequest;

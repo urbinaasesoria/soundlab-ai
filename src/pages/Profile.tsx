@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowUpRight,
@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Download,
   Globe2,
+  HardDrive,
   Info,
   Lock,
   Mail,
@@ -18,8 +19,9 @@ import {
 } from "lucide-react";
 import { Modal } from "../components/Modal";
 import { COUNTRIES } from "../lib/data/countries";
+import { clearAudioStore } from "../lib/storage/db";
 import { useStudio } from "../lib/storage/store";
-import { downloadText, formatDateLong, formatNumber } from "../lib/utils";
+import { downloadText, formatBytes, formatDateLong, formatNumber } from "../lib/utils";
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -40,6 +42,36 @@ export function ProfilePage() {
   const [socials, setSocials] = useState(prefs.socials);
   const [notifications, setNotifications] = useState(prefs.notifications);
   const [resetOpen, setResetOpen] = useState(false);
+  const [purgeOpen, setPurgeOpen] = useState(false);
+  const [storageInfo, setStorageInfo] = useState<{ usage: number; quota: number } | null>(null);
+
+  const fetchStorage = () => {
+    if (typeof navigator !== "undefined" && navigator.storage && navigator.storage.estimate) {
+      navigator.storage
+        .estimate()
+        .then((est) => {
+          if (typeof est.usage === "number" && typeof est.quota === "number") {
+            setStorageInfo({ usage: est.usage, quota: est.quota });
+          }
+        })
+        .catch(() => {});
+    }
+  };
+
+  useEffect(() => {
+    fetchStorage();
+  }, [scans, renders]);
+
+  const purgeAudioBlobs = async () => {
+    try {
+      await clearAudioStore();
+      toast("Archivos de audio pesados liberados de IndexedDB. Los informes y proyectos se conservan.", "ok");
+      setPurgeOpen(false);
+      fetchStorage();
+    } catch {
+      toast("No se pudo limpiar el almacén de audio.", "err");
+    }
+  };
 
   const completedTutorials = prefs.tutorialScan ? 1 : 0;
   const tutorialPct = completedTutorials * 100;
@@ -392,6 +424,42 @@ export function ProfilePage() {
         </div>
       </form>
 
+      <section className="card" style={{ marginBottom: 20 }}>
+        <div className="profile-card__head">
+          <div>
+            <div className="card__label">ALMACENAMIENTO LOCAL</div>
+            <h2>IndexedDB y espacio en disco</h2>
+          </div>
+          <span className="chip chip--emerald">
+            <HardDrive size={11} /> 100% EN TU EQUIPO
+          </span>
+        </div>
+        <p>
+          Los audios analizados y los WAV renderizados en 24 bits se guardan localmente para no transmitirlos a ningún servidor.
+          {storageInfo ? (
+            <>
+              {" "}Espacio utilizado en este navegador: <b>{formatBytes(storageInfo.usage)}</b> de{" "}
+              <b>{formatBytes(storageInfo.quota)}</b> disponibles ({((storageInfo.usage / storageInfo.quota) * 100).toFixed(1)}%).
+            </>
+          ) : (
+            " Tu navegador asigna espacio dinámico para almacenar las sesiones."
+          )}
+        </p>
+        {storageInfo && storageInfo.quota > 0 && (
+          <div className="credit-bar" style={{ margin: "14px 0 16px" }}>
+            <span style={{ width: `${Math.min(100, Math.max(1, (storageInfo.usage / storageInfo.quota) * 100))}%` }} />
+          </div>
+        )}
+        <div className="row-flex">
+          <button className="btn btn--ghost btn--sm" onClick={() => setPurgeOpen(true)}>
+            <Trash2 size={13} /> Liberar audios pesados
+          </button>
+          <span className="chart-note" style={{ letterSpacing: 0 }}>
+            Mantiene los informes, métricas y certificados; solo elimina las muestras de audio en disco para liberar espacio.
+          </span>
+        </div>
+      </section>
+
       <section className="card profile-danger">
         <div className="profile-danger__head">
           <div>
@@ -446,6 +514,28 @@ export function ProfilePage() {
         <p className="muted" style={{ fontSize: 13.5, lineHeight: 1.7 }}>
           Se eliminarán los proyectos, los análisis, los renders, los certificados y las preferencias. La página se
           recargará con el proyecto DEMO y 1.850 créditos. Esta acción no se puede deshacer.
+        </p>
+      </Modal>
+
+      <Modal
+        open={purgeOpen}
+        onClose={() => setPurgeOpen(false)}
+        eyebrow="LIBERAR ALMACENAMIENTO"
+        title="¿Eliminar archivos de audio pesados?"
+        footer={
+          <div className="row-flex" style={{ justifyContent: "flex-end" }}>
+            <button className="btn btn--ghost" onClick={() => setPurgeOpen(false)}>
+              Cancelar
+            </button>
+            <button className="btn btn--primary" onClick={purgeAudioBlobs}>
+              <Trash2 size={14} /> Liberar espacio
+            </button>
+          </div>
+        }
+      >
+        <p className="muted" style={{ fontSize: 13.5, lineHeight: 1.7 }}>
+          Esta acción borra los archivos binarios de audio guardados en IndexedDB. Todos tus proyectos, informes de escaneo,
+          gráficos forenses, certificados SHA-256 y configuraciones se mantendrán intactos.
         </p>
       </Modal>
     </div>

@@ -14,7 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { useStudio } from "../lib/storage/store";
-import { COST, type Certificate, type ScanRecord } from "../lib/storage/types";
+import { COST, type Certificate } from "../lib/storage/types";
 import {
   copyText,
   downloadText,
@@ -52,7 +52,6 @@ export function ShieldPage() {
   const [verifyCertId, setVerifyCertId] = useState(certs[0]?.id ?? "");
   const [verifyResult, setVerifyResult] = useState<"match" | "mismatch" | null>(null);
 
-  const linkedProject = projects.find((p) => p.id === (queryProject?.id ?? scans.find((s) => s.id === scanId)?.projectId));
   const sortedCerts = useMemo(() => certs.slice().sort((a, b) => b.createdAt - a.createdAt), [certs]);
   const verifyCert = sortedCerts.find((c) => c.id === verifyCertId) ?? sortedCerts[0];
   const visibleCerts = sortedCerts.filter((c) => {

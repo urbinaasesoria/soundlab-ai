@@ -44,13 +44,6 @@ export function openDb(): Promise<IDBDatabase> {
   return dbPromise;
 }
 
-function requestToPromise<T>(req: IDBRequest<T>): Promise<T> {
-  return new Promise((resolve, reject) => {
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-
 async function withStore<T>(
   name: StoreName,
   mode: IDBTransactionMode,
@@ -160,6 +153,10 @@ export function markSeeded() {
   } catch {
     /* noop */
   }
+}
+
+export async function clearAudioStore(): Promise<void> {
+  await dbClear("audio");
 }
 
 export async function clearDatabase() {

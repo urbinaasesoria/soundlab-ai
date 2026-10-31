@@ -30,8 +30,8 @@ export default tseslint.config(
     },
   },
   {
-    files: ["tests/**/*.ts", "scripts/**/*.mjs"],
-    languageOptions: { globals: { ...globals.node } },
+    files: ["tests/**/*.{ts,mjs}", "scripts/**/*.mjs", "server/**/*.mjs", "api/**/*.mjs"],
+    languageOptions: { globals: { ...globals.node, ...globals.builtin } },
     rules: { "@typescript-eslint/no-explicit-any": "off" },
   },
 );

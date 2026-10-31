@@ -174,7 +174,6 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       alive = false;
     };
     // la semilla solo debe ejecutarse una vez
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const refresh = useCallback(async () => {

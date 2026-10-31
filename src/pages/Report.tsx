@@ -90,18 +90,17 @@ export function ReportPage() {
     downloadText(
       JSON.stringify(
         {
-          urbina: "Informe local de autenticidad",
+          product: BRAND.full,
           generatedAt: new Date().toISOString(),
           project: project?.trackName ?? null,
           artist: project?.artistName ?? null,
           scan,
-          disclaimer:
-            "Motor local heurístico NRM-LOCAL. No es ACRCloud ni una certificación legal. El audio nunca se envió a un servidor.",
+          disclaimer: `Motor local heurístico ${BRAND.engine}. Evaluación basada en rasgos acústicos físicos medibles. No predice clasificadores de terceros ni constituye peritaje legal. El audio nunca se envió a un servidor.`,
         },
         null,
         2,
       ),
-      `informe-${project?.trackName.replace(/\s+/g, "-").toLowerCase() ?? "urbina"}-${scan.id.slice(0, 8)}.json`,
+      `informe-${project?.trackName.replace(/\s+/g, "-").toLowerCase() ?? BRAND.wordmark.toLowerCase()}-${scan.id.slice(0, 8)}.json`,
       "application/json",
     );
   };
@@ -112,7 +111,7 @@ export function ReportPage() {
         <Link to="/" className="report-toolbar__brand" aria-label={`${BRAND.full}, inicio`}>
           <Logo size={30} glow={false} />
           <span>{BRAND.wordmark}</span>
-          <small>STUDIO</small>
+          <small>{BRAND.sub}</small>
         </Link>
         <div className="report-toolbar__actions">
           <button className="btn btn--ghost btn--sm" onClick={() => navigate(-1)}>
@@ -127,20 +126,20 @@ export function ReportPage() {
         </div>
       </div>
 
-      <main className="report-sheet">
+      <main className="report-sheet" id="contenido">
         <NarratePanel result={scan.result} />
         <header className="report-head">
           <div className="report-head__brand">
             <Logo size={48} glow={false} />
             <div>
               <b>{BRAND.wordmark}</b>
-              <span>STUDIO</span>
+              <span>{BRAND.sub}</span>
             </div>
           </div>
           <div className="report-head__meta">
-            <span>REPORTE DE AUTENTICIDAD</span>
+            <span>DIAGNÓSTICO TÉCNICO</span>
             <span>{reportDate}</span>
-            <span>MOTOR LOCAL · NRM-LOCAL</span>
+            <span>{BRAND.engine}</span>
           </div>
         </header>
 

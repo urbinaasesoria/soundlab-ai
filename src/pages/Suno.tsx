@@ -62,7 +62,6 @@ export function SunoPage() {
   }, [favorites]);
 
   const searching = query.trim().length > 0;
-  const [showPresets, setShowPresets] = useState(false);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

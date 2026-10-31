@@ -3,16 +3,12 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   ArrowRight,
-  ArrowUpRight,
   AudioWaveform,
-  Check,
-  ChevronDown,
   Copy,
   Download,
   FileText,
   Fingerprint,
   Lock,
-  Play,
   ScanLine,
   ShieldCheck,
   SlidersHorizontal,
@@ -26,7 +22,6 @@ import {
   downloadText,
   formatDate,
   formatDateTime,
-  formatDuration,
   shortHash,
 } from "../lib/utils";
 import { ZONE_LABEL } from "../lib/audio/analyzer";

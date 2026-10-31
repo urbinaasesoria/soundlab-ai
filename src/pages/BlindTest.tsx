@@ -53,7 +53,6 @@ export function BlindTestPage() {
       if (processed) URL.revokeObjectURL(processed.url);
     };
     // solo al desmontar
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

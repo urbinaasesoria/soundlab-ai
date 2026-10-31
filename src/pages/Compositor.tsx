@@ -10,7 +10,6 @@ import {
   compileSet,
   EMPTY_FORM,
   formatPlainText,
-  formForPreset,
   KEY_SCALES,
   LYRIC_LANGUAGES,
   LYRIC_POVS,

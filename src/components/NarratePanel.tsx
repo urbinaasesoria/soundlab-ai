@@ -27,15 +27,16 @@ export function NarratePanel({ result }: { result: unknown }) {
   if (!aiConfigured) return null;
 
   const buildPayload = () => {
-    const source = result as Record<string, any>;
-    const ai = source.ai ?? {};
-    const loudness = source.loudness ?? {};
-    const stereo = source.stereo ?? {};
-    const tonal = source.tonal ?? {};
-    const rhythm = source.rhythm ?? {};
+    const source = (result && typeof result === "object" ? result : {}) as Record<string, unknown>;
+    const ai = (source.ai ?? {}) as Record<string, unknown>;
+    const loudness = (source.loudness ?? {}) as Record<string, unknown>;
+    const stereo = (source.stereo ?? {}) as Record<string, unknown>;
+    const tonal = (source.tonal ?? {}) as Record<string, unknown>;
+    const rhythm = (source.rhythm ?? {}) as Record<string, unknown>;
+    const recs = Array.isArray(source.recommendations) ? source.recommendations : [];
     return {
-      motor: source.engine ?? null,
-      archivo: source.file?.name ?? null,
+      motor: typeof source.engine === "string" ? source.engine : null,
+      archivo: (source.file as { name?: string } | undefined)?.name ?? null,
       indice: {
         probabilidad: ai.probability ?? null,
         zona: ai.zone ?? null,
@@ -61,7 +62,7 @@ export function NarratePanel({ result }: { result: unknown }) {
       },
       tonalidad: { tono: tonal.key ?? null, bordeAgudos: tonal.hfCutoff ?? null },
       ritmo: { bpm: rhythm.bpm ?? null, jitterMs: rhythm.jitterMs ?? null, rejilla: rhythm.gridLock ?? null },
-      recomendaciones: (source.recommendations ?? []).map((r: any) => r?.title ?? r).slice(0, 8),
+      recomendaciones: recs.map((r: unknown) => (typeof r === "object" && r && "title" in r ? String((r as { title: unknown }).title) : String(r))).slice(0, 8),
     };
   };
 

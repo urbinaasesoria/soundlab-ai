@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
-  ArrowLeft,
-  ArrowRight,
   Check,
   Crown,
   FileAudio,
@@ -166,7 +164,7 @@ export function ScanPage() {
           <div className="eyebrow" style={{ marginBottom: 12 }}>ANÁLISIS DE DETECCIÓN</div>
           <h1>Escanear</h1>
           <p className="page-head__sub">
-            Sube tu master, premaster o stem y descubre qué porcentaje de IA detectan las plataformas en tu track.
+            Sube tu master, premaster o stem y analiza su apariencia generativa frente a 8 rasgos acústicos medibles (microtiming, extensión espectral, correlación estéreo y dinámica).
           </p>
         </div>
       </div>

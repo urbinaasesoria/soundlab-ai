@@ -22,7 +22,6 @@ import { formatDuration, formatNumber, clamp } from "../lib/utils";
 import { ScoreRing, type RingTone } from "./ScoreRing";
 import { ScaleGauge } from "./ScaleGauge";
 import { Spectrogram } from "./Spectrogram";
-import { Waveform } from "./Waveform";
 import { AudioPlayer } from "./AudioPlayer";
 
 const TONE: Record<RiskZone, RingTone> = {

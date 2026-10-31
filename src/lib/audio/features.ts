@@ -163,13 +163,6 @@ function percentile(sorted: Float64Array | number[], p: number): number {
   return sorted[idx];
 }
 
-function median(values: number[]): number {
-  if (values.length === 0) return 0;
-  const s = values.slice().sort((a, b) => a - b);
-  const m = s.length >> 1;
-  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
-}
-
 function stdDev(values: number[], mean?: number): number {
   if (values.length < 2) return 0;
   const m = mean ?? values.reduce((a, b) => a + b, 0) / values.length;
@@ -678,7 +671,6 @@ export async function extractFeatures(
   let width = 0;
   let balance = 0;
   let channelLevelDiffDb = 0;
-  let channelCentroidDiffHz = 0;
   let hfDecorrelation = 0;
   if (!isMono) {
     const step = Math.max(1, Math.floor(L.length / 400000));

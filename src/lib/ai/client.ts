@@ -10,7 +10,8 @@
  * funcionando exactamente igual sin conexión y sin coste.
  */
 
-const PROXY = (import.meta.env.VITE_AI_PROXY as string | undefined)?.replace(/\/$/, "") ?? "";
+const RAW_PROXY = (import.meta.env.VITE_AI_PROXY as string | undefined)?.replace(/\/$/, "");
+const PROXY = RAW_PROXY !== undefined ? RAW_PROXY : (import.meta.env.PROD ? "" : "http://127.0.0.1:8787");
 
 export interface AiSuggestion {
   stylePrompt: string;
@@ -28,7 +29,7 @@ export interface AiResult {
   error?: string;
 }
 
-export const aiConfigured = Boolean(PROXY);
+export const aiConfigured = Boolean(RAW_PROXY || import.meta.env.PROD || RAW_PROXY === "");
 
 export async function improveSet(input: {
   set: string;

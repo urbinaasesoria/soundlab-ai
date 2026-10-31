@@ -1,21 +1,36 @@
 # Continuidad — SoundLab AI
 
 > **© 2026 URBINA ASESORÍA E INVERSIONES S.A.C.** Documento vivo de traspaso.
-> Última actualización: **30 de octubre de 2026** · rama `main` · 12 commits · árbol limpio.
+> Última actualización: **30 de octubre de 2026 (Cierre de jornada)** · rama `main` · 16 commits · árbol limpio.
 >
 > Sirve para retomar el trabajo sin reconstruir contexto. Si algo de aquí contradice al código,
 > **manda el código**: este documento se actualiza en cada sesión.
 
 ---
 
-## 0. Cómo retomar en 60 segundos
+## 0. Estado de infraestructura en producción (Activo)
+
+| Servicio | Estado | URL / Identificador |
+| :--- | :---: | :--- |
+| **Producción Web (Vercel)** | 🟢 Activo | `https://soundlab-ai-app.vercel.app` (alias secundario: `https://soundlab-ai-urbinaasesoria.vercel.app`) |
+| **Acceso Público** | 🟢 Abierto | SSO Protection desactivado (`ssoProtection: false`). Acceso directo sin login de Vercel |
+| **Repositorio GitHub** | 🟢 Sincronizado | `https://github.com/urbinaasesoria/soundlab-ai` (rama `main`) |
+| **Base de Datos (Supabase)** | 🟢 Conectada | `https://pkjunhbuormzdkhbrxfd.supabase.co` (tablas `profiles`, `orders`, `credit_transactions`, RLS activas) |
+| **Copiloto Gemini AI** | 🟢 En vivo | Endpoint `/api/health` verificado con `gemini-2.5-flash` |
+| **Pasarela Payoneer** | 🟢 Enlazada | Link oficial de URBINA + Código QR en modal (`public/images/payment-qr.png`) |
+| **Pasarela Yape / Plin** | 🟢 Enlazada | Al 976624074 (URBINA ASESORÍA E INVERSIONES S.A.C.) con confirmación por WhatsApp |
+| **Pasarela Mercado Pago** | 🟡 Parcial | Cuenta `murbinasojo@gmail.com` con solicitud asistida por WhatsApp (links automáticos pendientes) |
+
+---
+
+## 0.1 Cómo retomar en 60 segundos mañana
 
 ```powershell
-cd D:\OpenCode\OpenREA\soundlab-ai
-npm run dev          # app en http://localhost:5180
-npm run ai:proxy     # proxy de IA en http://localhost:8787 (necesita .env.local)
-npm run ai:check     # verifica la conexión con Gemini de extremo a extremo
-npm test             # 15 pruebas del motor
+cd D:\OpenCode\OpenREA\re-narmia
+npm test             # 17 pruebas unitarias (100% verde)
+npm run typecheck    # 0 errores de TypeScript
+npm run lint         # 0 advertencias de ESLint
+npm run dev          # app local en http://localhost:5180
 ```
 
 | Puerto | Qué sirve | Nota |
@@ -238,9 +253,13 @@ ca39b70  Comparador a ciegas con nivelacion, PWA, landmark accesible y proxy de 
 
 ---
 
-## 11. Próxima sesión — por dónde empezar
+## 11. Próxima sesión — Plan de arranque para mañana
 
-1. Leer §0 y §6 de este documento.
-2. `npm run ai:check` para confirmar que la conexión sigue viva.
-3. Retomar por la tarea 2 (**checklist de validación local**) salvo que haya pistas en
-   `Calibracion/`, en cuyo caso empezar por la tarea 1 (calibración).
+1. **Mercado Pago (Completar enlaces automáticos):**
+   - Generar los 4 links de pago en la cuenta `murbinasojo@gmail.com` (Plan Pro S/ 79, Pack Básico S/ 19, Pack Pro S/ 49, Pack Estudio S/ 99) o vincular las credenciales de Mercado Pago Checkout Pro (`PUBLIC_KEY` y `ACCESS_TOKEN`).
+2. **Conexión cliente Supabase (`supabase-js`):**
+   - Habilitar autenticación de usuarios (Magic Link / Google OAuth) y sincronizar el balance de créditos y pedidos desde Supabase en lugar de únicamente `localStorage`.
+3. **Calibración del motor:**
+   - Si se disponen de pistas en `Calibracion/humanas` y `Calibracion/ia`, ejecutar el pipeline de calibración.
+4. **Validación comercial integral:**
+   - Pruebas de compra simuladas en vivo desde `https://soundlab-ai-app.vercel.app/billing`.

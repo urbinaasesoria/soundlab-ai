@@ -66,8 +66,17 @@ function rateLimited(ip) {
 
 function corsFor(req) {
   const origin = req.headers.origin;
-  if (origin && ALLOWED.has(origin)) {
+  if (!origin) return {};
+  if (ALLOWED.has(origin)) {
     return { "access-control-allow-origin": origin, vary: "Origin" };
+  }
+  try {
+    const url = new URL(origin);
+    if (url.hostname.endsWith(".vercel.app") || url.hostname === "localhost" || url.hostname === "127.0.0.1") {
+      return { "access-control-allow-origin": origin, vary: "Origin" };
+    }
+  } catch {
+    // origin malformado
   }
   return { vary: "Origin" };
 }

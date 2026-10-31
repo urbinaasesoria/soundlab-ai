@@ -194,16 +194,21 @@ export function BillingPage() {
     }, 600);
   };
 
+  const PAYONEER_PAYMENT_URL = "https://link.payoneer.com/Token?t=A79AF4D8F8AB4D3B8B9F3D21E44D1768&src=pl";
+
   const handlePayoneerRedirect = () => {
     if (!checkout) return;
-    toast("Abriendo pasarela de pago Payoneer...", "info");
-    window.open("https://pubs.payoneer.com/payment-request", "_blank");
+    toast("Abriendo pasarela de pago oficial de Payoneer...", "info");
+    window.open(PAYONEER_PAYMENT_URL, "_blank");
   };
 
   const handleMercadoPagoRedirect = () => {
     if (!checkout) return;
-    toast("Conectando con Mercado Pago Checkout...", "info");
-    window.open("https://www.mercadopago.com", "_blank");
+    const msg = encodeURIComponent(
+      `Hola SoundLab AI, deseo pagar ${currentItemName} (S/ ${checkout.kind === "plan" ? checkout.plan.prices.PEN : checkout.pack.prices.PEN}) mediante Mercado Pago a la cuenta murbinasojo@gmail.com. Por favor facilítenme el link de pago para completar la transacción.`
+    );
+    window.open(`https://wa.me/51976624074?text=${msg}`, "_blank");
+    toast("Abriendo chat para coordinar link de Mercado Pago...", "info");
   };
 
   return (
@@ -517,12 +522,12 @@ export function BillingPage() {
             )}
             {method === "mercadopago" && (
               <button className="btn btn--gold" onClick={handleMercadoPagoRedirect} disabled={busy}>
-                <ExternalLink size={14} /> Abrir Mercado Pago ({CURRENCY_SYMBOLS[currency]} {currentAmount})
+                <MessageCircle size={14} /> Solicitar Link por WhatsApp (S/ {currentAmount})
               </button>
             )}
             {method === "payoneer" && (
               <button className="btn btn--primary" onClick={handlePayoneerRedirect} disabled={busy}>
-                <ExternalLink size={14} /> Continuar a Payoneer ($ {checkout?.kind === "plan" ? checkout.plan.prices.USD : checkout?.pack.prices.USD})
+                <ExternalLink size={14} /> Pagar con Payoneer ($ {checkout?.kind === "plan" ? checkout.plan.prices.USD : checkout?.pack.prices.USD} USD)
               </button>
             )}
           </div>
@@ -643,18 +648,26 @@ export function BillingPage() {
                 <div className="row-flex" style={{ justifyContent: "space-between", marginBottom: 12 }}>
                   <div className="row-flex" style={{ gap: 8 }}>
                     <CreditCard size={20} color="var(--gold-ink)" />
-                    <b>Mercado Pago Checkout</b>
+                    <b>Mercado Pago (Latinoamérica)</b>
                   </div>
                   <span className="chip chip--gold">
                     Monto: S/ {checkout.kind === "plan" ? checkout.plan.prices.PEN : checkout.pack.prices.PEN}
                   </span>
                 </div>
                 <p style={{ fontSize: 13.5, lineHeight: 1.6 }}>
-                  Paga de forma 100% segura con tus tarjetas de débito o crédito locales, cuotas sin interés y dinero en cuenta de Mercado Pago.
+                  Paga de forma 100% segura con tus tarjetas de débito o crédito locales, cuotas sin interés y saldo de Mercado Pago.
                 </p>
-                <div className="inline-note" style={{ marginTop: 10 }}>
+
+                <div className="stack-2" style={{ marginTop: 12, background: "var(--surface)", padding: "12px 14px", borderRadius: 8 }}>
+                  <span className="mute" style={{ fontSize: 11 }}>CUENTA RECEPTORA: murbinasojo@gmail.com</span>
+                  <div style={{ fontSize: 13, lineHeight: 1.5 }}>
+                    Para procesar tu cobro con Mercado Pago, haz clic en <b>&quot;Solicitar Link por WhatsApp&quot;</b> y te facilitaremos el enlace de pago personalizado de inmediato.
+                  </div>
+                </div>
+
+                <div className="inline-note" style={{ marginTop: 12 }}>
                   <ShieldCheck size={14} />
-                  <span>Tu pago está protegido por el cifrado bancario de Mercado Pago. La acreditación es automática.</span>
+                  <span>Tu pago está protegido por el cifrado bancario de Mercado Pago. Activación en menos de 5 minutos.</span>
                 </div>
               </div>
             )}
@@ -674,9 +687,30 @@ export function BillingPage() {
                 <p style={{ fontSize: 13.5, lineHeight: 1.6 }}>
                   Acepta tarjetas de crédito y débito internacionales (Visa, Mastercard, Amex) y saldo de cuenta Payoneer en dólares americanos (USD).
                 </p>
-                <div className="inline-note" style={{ marginTop: 10 }}>
+
+                <div className="row-flex" style={{ marginTop: 14, gap: 16, alignItems: "center", background: "var(--surface)", padding: "12px", borderRadius: 8 }}>
+                  <img
+                    src="/images/payment-qr.png"
+                    alt="Código QR de Pago Payoneer"
+                    style={{ width: 105, height: 105, borderRadius: 6, background: "#fff", padding: 4, flexShrink: 0 }}
+                  />
+                  <div className="stack-1" style={{ flex: 1, fontSize: 13 }}>
+                    <span className="mute" style={{ fontSize: 11 }}>ENLACE OFICIAL &amp; QR DE PAGO</span>
+                    <strong style={{ display: "block", marginBottom: 4 }}>Escanea el código QR con tu móvil o abre el link directo:</strong>
+                    <button
+                      type="button"
+                      className="btn btn--sm btn--primary"
+                      style={{ alignSelf: "flex-start" }}
+                      onClick={handlePayoneerRedirect}
+                    >
+                      <ExternalLink size={13} /> Ir a Pasarela Payoneer
+                    </button>
+                  </div>
+                </div>
+
+                <div className="inline-note" style={{ marginTop: 12 }}>
                   <Globe2 size={14} />
-                  <span>Ideal para clientes en Estados Unidos, Europa o Latinoamérica con tarjeta internacional.</span>
+                  <span>Titular oficial: URBINA ASESORÍA E INVERSIONES S.A.C. · Enlace oficial cifrado con SSL por Payoneer.</span>
                 </div>
               </div>
             )}

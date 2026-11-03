@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Bell, Menu, Moon, ScanLine, Sun } from "lucide-react";
+import { Bell, LogIn, Menu, Moon, ScanLine, Sun, UserCheck } from "lucide-react";
 import { useStudio } from "../lib/storage/store";
 import { formatDateTime } from "../lib/utils";
 import { zoneFromProbability } from "../lib/audio/analyzer";
 
 export function Topbar({ onMenu }: { onMenu: () => void }) {
-  const { prefs, scans, projects, toggleTheme, toast } = useStudio();
+  const { prefs, user, isAdmin, openAuthModal, scans, projects, toggleTheme, toast } = useStudio();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
 
@@ -29,6 +29,42 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
       </button>
 
       <div className="topbar__actions">
+        {user ? (
+          <Link
+            to="/profile"
+            className="row-flex"
+            style={{
+              gap: 6,
+              textDecoration: "none",
+              background: "var(--surface)",
+              padding: "4px 10px",
+              borderRadius: 20,
+              fontSize: 12,
+              border: "1px solid var(--line)",
+            }}
+          >
+            {isAdmin ? (
+              <span className="chip chip--gold" style={{ padding: "1px 6px", fontSize: 10 }}>
+                👑 ADMIN
+              </span>
+            ) : (
+              <UserCheck size={14} color="var(--emerald-ink)" />
+            )}
+            <span style={{ maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {prefs.artistName || user.email}
+            </span>
+          </Link>
+        ) : (
+          <button
+            type="button"
+            className="btn btn--sm btn--primary"
+            onClick={() => openAuthModal("signin")}
+            style={{ gap: 6 }}
+          >
+            <LogIn size={13} /> Iniciar Sesión
+          </button>
+        )}
+
         <span className="local-chip" title="100 % local: tu audio nunca sale del navegador">
           <span className="local-chip__dot" /> LOCAL · PRIVADO
         </span>

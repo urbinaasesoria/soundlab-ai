@@ -11,6 +11,8 @@
  */
 
 const RAW_PROXY = (import.meta.env.VITE_AI_PROXY as string | undefined)?.replace(/\/$/, "");
+// En producción (Vercel), la API serverless es relativa al mismo origen ("").
+// En desarrollo local apunta a http://127.0.0.1:8787.
 const PROXY = RAW_PROXY !== undefined ? RAW_PROXY : (import.meta.env.PROD ? "" : "http://127.0.0.1:8787");
 
 export interface AiSuggestion {
@@ -29,14 +31,14 @@ export interface AiResult {
   error?: string;
 }
 
-export const aiConfigured = Boolean(RAW_PROXY || import.meta.env.PROD || RAW_PROXY === "");
+export const aiConfigured = typeof PROXY === "string";
 
 export async function improveSet(input: {
   set: string;
   preset: string;
   extras?: string;
 }): Promise<AiResult> {
-  if (!PROXY) return { available: false, ok: false, error: "IA no configurada" };
+  if (typeof PROXY !== "string") return { available: false, ok: false, error: "IA no configurada" };
 
   try {
     const response = await fetch(`${PROXY}/api/suggest`, {
@@ -90,7 +92,7 @@ export interface NarrateResult {
 
 /** Pide a la IA que explique el informe técnico y priorice las acciones. */
 export async function narrateReport(report: unknown): Promise<NarrateResult> {
-  if (!PROXY) return { available: false, ok: false, error: "IA no configurada" };
+  if (typeof PROXY !== "string") return { available: false, ok: false, error: "IA no configurada" };
 
   try {
     const response = await fetch(`${PROXY}/api/narrate`, {
@@ -153,7 +155,7 @@ export async function composeSet(input: {
   avoid?: string;
   mode?: "create" | "rewrite";
 }): Promise<AiComposeResult> {
-  if (!PROXY) return { available: false, ok: false, error: "IA no configurada" };
+  if (typeof PROXY !== "string") return { available: false, ok: false, error: "IA no configurada" };
 
   try {
     const response = await fetch(`${PROXY}/api/compose`, {

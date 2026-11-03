@@ -140,6 +140,13 @@ export function CompositorPage() {
    * ajusta el estilo para que ambos encajen.
    */
   const generateLyrics = async () => {
+    let currentIdea = form.idea.trim();
+    if (!currentIdea && !form.lyrics.trim()) {
+      currentIdea = `Una canción potente y memorable con identidad única al estilo ${result.presetName}`;
+      set("idea", currentIdea);
+      toast("Generando idea automática según el género...", "info");
+    }
+
     setAiBusy(true);
     setAiNote(null);
     const previous = aiVariants[0] ?? "";
@@ -149,7 +156,7 @@ export function CompositorPage() {
     const mode: "create" | "rewrite" = ownLyrics ? "rewrite" : "create";
     const variant = aiVariants.length + 1;
     const response = await composeSet({
-      idea: form.idea,
+      idea: currentIdea,
       preset: result.presetName,
       set: result.stylePrompt,
       stylePrompt: result.stylePrompt,
@@ -418,12 +425,8 @@ export function CompositorPage() {
                 <button
                   className="btn btn--gold btn--sm"
                   onClick={() => void generateLyrics()}
-                  disabled={aiBusy || (!form.idea.trim() && !form.lyrics.trim())}
-                  title={
-                    form.idea.trim() || form.lyrics.trim()
-                      ? "La IA escribe la letra y ajusta el estilo al mismo tiempo"
-                      : "Escribe una idea o un verso para que la IA componga la letra"
-                  }
+                  disabled={aiBusy}
+                  title="La IA escribe la letra y ajusta el estilo al mismo tiempo"
                 >
                   {aiBusy ? <Loader2 size={13} className="composer-spin" /> : <Wand2 size={13} />}{" "}
                   {aiBusy

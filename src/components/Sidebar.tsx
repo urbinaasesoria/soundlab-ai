@@ -9,6 +9,7 @@ import {
   FolderOpen,
   Home,
   LifeBuoy,
+  LogIn,
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
@@ -48,7 +49,7 @@ const TOOL_LINKS = [
 ];
 
 export function Sidebar({ open, collapsed, onClose, onCollapse, onLogout }: SidebarProps) {
-  const { prefs, toast } = useStudio();
+  const { prefs, user, isAdmin, openAuthModal, toast } = useStudio();
   const creditsMax = prefs.plan === "pro" ? 1_000_000 : 2950;
   const pct = Math.min(100, (prefs.credits / creditsMax) * 100);
 
@@ -129,23 +130,44 @@ export function Sidebar({ open, collapsed, onClose, onCollapse, onLogout }: Side
       </div>
 
       <div className="sidebar__footer">
+        {isAdmin && (
+          <div style={{ padding: "6px 12px", marginBottom: 6 }}>
+            <span className="chip chip--gold" style={{ width: "100%", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>
+              👑 ADMINISTRADOR
+            </span>
+          </div>
+        )}
         <NavLink to="/profile" className={({ isActive }) => `nav-item ${isActive ? "nav-item--active" : ""}`} onClick={onClose}>
           <UserRound size={18} />
-          <span className="nav-item__label">Mi Perfil</span>
+          <span className="nav-item__label">{user ? "Mi Perfil" : "Identidad"}</span>
         </NavLink>
         <NavLink to="/billing" className={({ isActive }) => `nav-item ${isActive ? "nav-item--active" : ""}`} onClick={onClose}>
           <CreditCard size={18} />
-          <span className="nav-item__label">Mi Suscripción</span>
+          <span className="nav-item__label">Suscripción &amp; Planes</span>
         </NavLink>
-        <button className="nav-item" onClick={() => toast(`Soporte de ${BRAND.full}: escribe a ${BRAND.email}. Todo el procesado ocurre en tu equipo.`, "info")}>
+        <button className="nav-item" onClick={() => toast(`Soporte de ${BRAND.full}: escribe a ${BRAND.email}.`, "info")}>
           <LifeBuoy size={18} />
           <span className="nav-item__label">Soporte</span>
           <span className="nav-item__pro">PRO</span>
         </button>
-        <button className="nav-item" onClick={onLogout}>
-          <LogOut size={18} />
-          <span className="nav-item__label">Cerrar Sesión</span>
-        </button>
+        {user ? (
+          <button className="nav-item" onClick={onLogout}>
+            <LogOut size={18} />
+            <span className="nav-item__label">Cerrar Sesión</span>
+          </button>
+        ) : (
+          <button
+            className="nav-item"
+            style={{ color: "var(--gold-ink)" }}
+            onClick={() => {
+              openAuthModal("signin");
+              onClose();
+            }}
+          >
+            <LogIn size={18} />
+            <span className="nav-item__label" style={{ fontWeight: 600 }}>Iniciar Sesión</span>
+          </button>
+        )}
         <div className="sidebar__legal">{BRAND.copyrightShort}</div>
       </div>
     </aside>

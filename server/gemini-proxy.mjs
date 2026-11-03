@@ -207,18 +207,31 @@ function sanitizeSuggestion(raw) {
   };
 }
 
-async function handleSuggest(req, res) {
+async function parseBody(req) {
+  if (req.body && typeof req.body === "object") {
+    return req.body;
+  }
+  if (typeof req.body === "string" && req.body.trim().length > 0) {
+    return JSON.parse(req.body);
+  }
   let body = "";
   for await (const chunk of req) {
     body += chunk;
-    if (body.length > MAX_BODY) return send(req, res, 413, { error: "payload demasiado grande" });
+    if (body.length > MAX_BODY) {
+      const err = new Error("payload demasiado grande");
+      err.status = 413;
+      throw err;
+    }
   }
+  return JSON.parse(body || "{}");
+}
 
+async function handleSuggest(req, res) {
   let payload;
   try {
-    payload = JSON.parse(body || "{}");
-  } catch {
-    return send(req, res, 400, { error: "JSON inválido" });
+    payload = await parseBody(req);
+  } catch (err) {
+    return send(req, res, err?.status || 400, { error: err?.message || "JSON inválido" });
   }
 
   const { set, preset, extras } = payload ?? {};
@@ -398,17 +411,11 @@ function composeUserText(payload) {
 }
 
 async function handleCompose(req, res) {
-  let body = "";
-  for await (const chunk of req) {
-    body += chunk;
-    if (body.length > MAX_BODY) return send(req, res, 413, { error: "payload demasiado grande" });
-  }
-
   let payload;
   try {
-    payload = JSON.parse(body || "{}");
-  } catch {
-    return send(req, res, 400, { error: "JSON inválido" });
+    payload = await parseBody(req);
+  } catch (err) {
+    return send(req, res, err?.status || 400, { error: err?.message || "JSON inválido" });
   }
 
   if (!payload?.idea && !payload?.existingLyrics) {
@@ -546,17 +553,11 @@ REGLAS
 7. En disclaimer, una frase recordando que es una lectura automática y que el oído manda.`;
 
 async function handleNarrate(req, res) {
-  let body = "";
-  for await (const chunk of req) {
-    body += chunk;
-    if (body.length > MAX_BODY) return send(req, res, 413, { error: "payload demasiado grande" });
-  }
-
   let payload;
   try {
-    payload = JSON.parse(body || "{}");
-  } catch {
-    return send(req, res, 400, { error: "JSON inválido" });
+    payload = await parseBody(req);
+  } catch (err) {
+    return send(req, res, err?.status || 400, { error: err?.message || "JSON inválido" });
   }
 
   if (!payload?.report || typeof payload.report !== "object") {

@@ -10,6 +10,8 @@ import {
   HardDrive,
   Info,
   Lock,
+  LogIn,
+  LogOut,
   Mail,
   RotateCcw,
   Save,
@@ -33,7 +35,7 @@ function initials(name: string): string {
 }
 
 export function ProfilePage() {
-  const { prefs, projects, scans, renders, certs, updatePrefs, resetAll, toast } = useStudio();
+  const { prefs, user, isAdmin, signOut, openAuthModal, projects, scans, renders, certs, updatePrefs, resetAll, toast } = useStudio();
 
   const [artistName, setArtistName] = useState(prefs.artistName);
   const [country, setCountry] = useState(prefs.country);
@@ -150,45 +152,70 @@ export function ProfilePage() {
       <div className="page-head">
         <div>
           <div className="eyebrow" style={{ marginBottom: 10 }}>
-            CUENTA LOCAL
+            {isAdmin ? "PANEL DE CONTROL ADMINISTRATIVO" : user ? "CUENTA EN LA NUBE" : "CUENTA DE USUARIO"}
           </div>
-          <h1>Mi Perfil</h1>
-          <p className="page-head__sub">Administra tu información personal y tus redes.</p>
+          <h1>{isAdmin ? "Administrador Oficial" : "Mi Perfil"}</h1>
+          <p className="page-head__sub">
+            {isAdmin
+              ? "Acceso maestro como titular de URBINA ASESORÍA E INVERSIONES S.A.C. con créditos ilimitados."
+              : user
+                ? `Conectado como ${user.email}. Administra tu información y tus preferencias.`
+                : "Inicia sesión o crea tu cuenta para guardar tus créditos en la nube y acceder a planes Pro."}
+          </p>
         </div>
         <div className="page-head__actions">
-          <button className="btn btn--ghost" onClick={exportData}>
-            <Download size={15} /> Exportar datos
+          {user ? (
+            <button className="btn btn--danger btn--sm" onClick={() => void signOut()}>
+              <LogOut size={14} /> Cerrar sesión
+            </button>
+          ) : (
+            <button className="btn btn--gold btn--sm" onClick={() => openAuthModal("signin")}>
+              <LogIn size={14} /> Iniciar Sesión / Registrarse
+            </button>
+          )}
+          <button className="btn btn--ghost btn--sm" onClick={exportData}>
+            <Download size={14} /> Exportar datos
           </button>
         </div>
       </div>
 
       <div className="card profile-summary">
         <div className="profile-summary__avatar" aria-hidden="true">
-          {initials(prefs.fullName)}
-          <span className="profile-summary__status" title="Cuenta local" />
+          {isAdmin ? "UA" : initials(prefs.fullName || prefs.artistName)}
+          <span className="profile-summary__status" title="Estado" />
         </div>
         <div className="profile-summary__identity">
-          <div className="eyebrow">ARTISTA</div>
-          <h2>{artistName || prefs.artistName}</h2>
-          <p>{prefs.fullName} · {prefs.email}</p>
-          <div className="row-flex">
-            <span className={`chip ${isPro ? "chip--gold" : "chip--emerald"}`}>{isPro ? "PLAN PRO" : "PLAN FREE"}</span>
+          <div className="eyebrow">{isAdmin ? "TITULARIDAD OFICIAL" : "ARTISTA"}</div>
+          <h2>{isAdmin ? "URBINA ASESORÍA E INVERSIONES S.A.C." : (artistName || prefs.artistName)}</h2>
+          <p>{prefs.fullName} · {user?.email || prefs.email}</p>
+          <div className="row-flex" style={{ gap: 6, marginTop: 4 }}>
+            {isAdmin ? (
+              <span className="chip chip--gold" style={{ fontWeight: 700 }}>
+                👑 ADMINISTRADOR
+              </span>
+            ) : (
+              <span className={`chip ${isPro ? "chip--gold" : "chip--emerald"}`}>{isPro ? "PLAN PRO" : "PLAN FREE"}</span>
+            )}
+            {user ? (
+              <span className="chip chip--emerald">NUBE SINCRONIZADA</span>
+            ) : (
+              <span className="chip">INVITADO</span>
+            )}
             {dirty && <span className="chip chip--gold">CAMBIOS SIN GUARDAR</span>}
-            <span className="chip">LOCAL</span>
           </div>
         </div>
         <div className="profile-summary__stats">
           <div>
             <span>PLAN</span>
-            <b>{isPro ? "PRO" : "FREE"}</b>
+            <b>{isAdmin ? "PRO VITALICIO" : isPro ? "PRO" : "FREE"}</b>
           </div>
           <div>
             <span>CRÉDITOS</span>
-            <b>{formatNumber(prefs.credits)}</b>
+            <b>{isAdmin ? "ILIMITADOS" : formatNumber(prefs.credits)}</b>
           </div>
           <div>
             <span>PAÍS</span>
-            <b>{country || "—"}</b>
+            <b>{country || "Perú"}</b>
           </div>
           <div>
             <span>MIEMBRO DESDE</span>
@@ -471,15 +498,15 @@ export function ProfilePage() {
           </span>
         </div>
         <p>
-          La aplicación guarda proyectos, análisis, renders y certificados en IndexedDB, dentro de este navegador. Puedes
-          exportar los metadatos o borrar todo y volver al estado inicial con el proyecto DEMO y 1.850 créditos.
+          La aplicación guarda proyectos, análisis, renders y certificados en IndexedDB, dentro de tu navegador. Puedes
+          exportar los metadatos o limpiar los proyectos locales de prueba. Tu cuenta en la nube permanece segura.
         </p>
         <div className="row-flex">
           <button className="btn btn--ghost" onClick={exportData}>
             <Download size={14} /> Exportar JSON
           </button>
           <button className="btn btn--danger" onClick={() => setResetOpen(true)}>
-            <RotateCcw size={14} /> Restablecer datos locales
+            <RotateCcw size={14} /> Limpiar caché local
           </button>
           <span className="chart-note" style={{ letterSpacing: 0 }}>
             Los audios no se incluyen en la exportación.
@@ -490,30 +517,31 @@ export function ProfilePage() {
       <div className="profile-footnote">
         <UserRound size={14} />
         <span>
-          Funciona sin autenticación remota. No hay cuenta en la nube, recuperación de contraseña ni envío de
-          correos: todo vive en este navegador.
+          {user
+            ? `Sesión activa sincronizada con Supabase como ${user.email}. Privacidad garantizada: tus audios nunca salen del equipo.`
+            : "Estás explorando en modo local. Inicia sesión para sincronizar tus pedidos y conservar tus créditos permanentemente."}
         </span>
       </div>
 
       <Modal
         open={resetOpen}
         onClose={() => setResetOpen(false)}
-        eyebrow="REINICIAR DEMO"
-        title="¿Borrar todos los datos locales?"
+        eyebrow="LIMPIAR CACHÉ"
+        title="¿Limpiar los proyectos locales del navegador?"
         footer={
           <div className="row-flex" style={{ justifyContent: "flex-end" }}>
             <button className="btn btn--ghost" onClick={() => setResetOpen(false)}>
               Cancelar
             </button>
             <button className="btn btn--danger" onClick={resetAll}>
-              <Trash2 size={14} /> Borrar y reiniciar
+              <Trash2 size={14} /> Limpiar caché
             </button>
           </div>
         }
       >
         <p className="muted" style={{ fontSize: 13.5, lineHeight: 1.7 }}>
-          Se eliminarán los proyectos, los análisis, los renders, los certificados y las preferencias. La página se
-          recargará con el proyecto DEMO y 1.850 créditos. Esta acción no se puede deshacer.
+          Se eliminarán los proyectos y análisis temporales guardados en este navegador. Tu cuenta de usuario y créditos en Supabase
+          no se verán afectados. Esta acción no se puede deshacer.
         </p>
       </Modal>
 

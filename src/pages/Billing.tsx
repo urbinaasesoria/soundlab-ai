@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   Activity,
   AudioWaveform,
   Check,
+  CheckCircle2,
   Coins,
   Copy,
   CreditCard,
@@ -13,8 +14,10 @@ import {
   Gift,
   Globe2,
   Lock,
+  LogIn,
   MessageCircle,
   QrCode,
+  RefreshCw,
   ScanLine,
   ShieldCheck,
   Smartphone,
@@ -25,6 +28,7 @@ import { Modal } from "../components/Modal";
 import { useStudio } from "../lib/storage/store";
 import { COST } from "../lib/storage/types";
 import { copyText, formatDateLong, formatNumber } from "../lib/utils";
+import { supabase, type DbOrder } from "../lib/supabase/client";
 
 export type Currency = "PEN" | "USD" | "EUR";
 export type PaymentMethod = "yape_plin" | "mercadopago" | "payoneer";
@@ -105,7 +109,7 @@ const PRO_FEATURES = [
 ];
 
 export function BillingPage() {
-  const { prefs, addCredits, updatePrefs, toast } = useStudio();
+  const { prefs, user, isAdmin, openAuthModal, addCredits, updatePrefs, toast } = useStudio();
   const [currency, setCurrency] = useState<Currency>("PEN");
   const [checkout, setCheckout] = useState<Checkout | null>(null);
   const [method, setMethod] = useState<PaymentMethod>("yape_plin");
@@ -114,6 +118,50 @@ export function BillingPage() {
   // Campos para checkout Yape/Plin
   const [opCode, setOpCode] = useState("");
   const [payerName, setPayerName] = useState("");
+
+  // Estado para gestión de pedidos de Administrador
+  const [adminOrders, setAdminOrders] = useState<DbOrder[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+
+  const fetchAdminOrders = useCallback(async () => {
+    if (!isAdmin) return;
+    setLoadingOrders(true);
+    try {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(25);
+      if (!error && data) {
+        setAdminOrders(data as DbOrder[]);
+      }
+    } catch (e) {
+      console.error("Error al cargar pedidos:", e);
+    } finally {
+      setLoadingOrders(false);
+    }
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (isAdmin) {
+      fetchAdminOrders();
+    }
+  }, [isAdmin, fetchAdminOrders]);
+
+  const handleApproveOrder = async (orderId: string) => {
+    try {
+      const { error } = await supabase.rpc("approve_order", { target_order_id: orderId });
+      if (error) {
+        // Fallback: actualizar directamente en la tabla orders
+        await supabase.from("orders").update({ status: "approved", approved_at: new Date().toISOString() }).eq("id", orderId);
+      }
+      toast("¡Pedido aprobado! Créditos y plan activados para el usuario.", "ok");
+      fetchAdminOrders();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "error al aprobar";
+      toast("Error al aprobar: " + msg, "err");
+    }
+  };
 
   const isPro = prefs.plan === "pro";
   const creditsMax = isPro ? 1_000_000 : 2950;
@@ -179,6 +227,24 @@ export function BillingPage() {
     // Abrir WhatsApp en pestaña nueva
     window.open(`https://wa.me/51976624074?text=${whatsappMessage}`, "_blank");
 
+    // Registrar pedido en Supabase
+    supabase.from("orders").insert({
+      user_id: user?.id ?? null,
+      item_type: checkout.kind,
+      item_id: checkout.kind === "plan" ? checkout.plan.id : checkout.pack.id,
+      item_name: currentItemName,
+      amount: checkout.kind === "plan" ? checkout.plan.prices.PEN : checkout.pack.prices.PEN,
+      currency: "PEN",
+      payment_method: "yape_plin",
+      reference_code: opCode.trim(),
+      customer_name: payerName.trim() || prefs.artistName,
+      customer_email: user?.email || prefs.email,
+      status: "pending",
+      metadata: checkout.kind === "plan" ? { credits: checkout.plan.credits } : { credits: checkout.pack.credits + checkout.pack.bonus },
+    }).then(() => {
+      if (isAdmin) fetchAdminOrders();
+    });
+
     // Otorgar acceso / créditos provisionales
     window.setTimeout(() => {
       if (checkout.kind === "plan") {
@@ -199,6 +265,25 @@ export function BillingPage() {
   const handlePayoneerRedirect = () => {
     if (!checkout) return;
     toast("Abriendo pasarela de pago oficial de Payoneer...", "info");
+
+    // Registrar pedido en Supabase
+    supabase.from("orders").insert({
+      user_id: user?.id ?? null,
+      item_type: checkout.kind,
+      item_id: checkout.kind === "plan" ? checkout.plan.id : checkout.pack.id,
+      item_name: currentItemName,
+      amount: checkout.kind === "plan" ? checkout.plan.prices.USD : checkout.pack.prices.USD,
+      currency: "USD",
+      payment_method: "payoneer",
+      reference_code: "PAYONEER-" + Date.now().toString(36).toUpperCase(),
+      customer_name: payerName.trim() || prefs.artistName,
+      customer_email: user?.email || prefs.email,
+      status: "pending",
+      metadata: checkout.kind === "plan" ? { credits: checkout.plan.credits } : { credits: checkout.pack.credits + checkout.pack.bonus },
+    }).then(() => {
+      if (isAdmin) fetchAdminOrders();
+    });
+
     window.open(PAYONEER_PAYMENT_URL, "_blank");
   };
 
@@ -263,6 +348,106 @@ export function BillingPage() {
           <span className="chip">PAYONEER 🇺🇸</span>
         </div>
       </div>
+
+      {!user && (
+        <div className="card" style={{ background: "var(--surface)", border: "1px solid var(--primary)", padding: "16px 20px" }}>
+          <div className="row-flex" style={{ justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+            <div className="row-flex" style={{ gap: 10 }}>
+              <LogIn size={20} color="var(--primary)" />
+              <div>
+                <b style={{ display: "block" }}>¿Aún no has iniciado sesión?</b>
+                <span className="mute" style={{ fontSize: 13 }}>
+                  Regístrate o inicia sesión para que tus compras y créditos queden vinculados a tu cuenta de Supabase en la nube.
+                </span>
+              </div>
+            </div>
+            <button className="btn btn--gold btn--sm" onClick={() => openAuthModal("signin")}>
+              Iniciar Sesión / Crear Cuenta
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isAdmin && (
+        <section className="card" style={{ border: "1px solid var(--gold)", background: "rgba(242, 202, 80, 0.03)" }}>
+          <div className="row-flex" style={{ justifyContent: "space-between", marginBottom: 14 }}>
+            <div>
+              <div className="eyebrow" style={{ color: "var(--gold-ink)" }}>👑 GESTIÓN DE PAGOS · ADMINISTRADOR</div>
+              <h2>Pedidos de Clientes (Supabase)</h2>
+              <p className="mute" style={{ fontSize: 13, marginTop: 4 }}>
+                Revisa los pedidos de Yape/Plin, Payoneer y Mercado Pago. Haz clic en &quot;Aprobar&quot; para acreditar saldo de inmediato.
+              </p>
+            </div>
+            <button className="btn btn--ghost btn--sm" onClick={fetchAdminOrders} disabled={loadingOrders}>
+              <RefreshCw size={13} className={loadingOrders ? "composer-spin" : ""} /> Actualizar pedidos
+            </button>
+          </div>
+
+          {adminOrders.length === 0 ? (
+            <div className="mute" style={{ fontSize: 13, padding: "20px 0", textAlign: "center" }}>
+              {loadingOrders ? "Cargando pedidos desde Supabase..." : "No hay pedidos registrados en Supabase aún."}
+            </div>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid var(--line-strong)", textAlign: "left" }}>
+                    <th style={{ padding: "8px 6px" }}>Fecha</th>
+                    <th style={{ padding: "8px 6px" }}>Cliente / Email</th>
+                    <th style={{ padding: "8px 6px" }}>Ítem</th>
+                    <th style={{ padding: "8px 6px" }}>Método</th>
+                    <th style={{ padding: "8px 6px" }}>Monto</th>
+                    <th style={{ padding: "8px 6px" }}>Código Voucher</th>
+                    <th style={{ padding: "8px 6px" }}>Estado</th>
+                    <th style={{ padding: "8px 6px", textAlign: "right" }}>Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {adminOrders.map((ord) => (
+                    <tr key={ord.id} style={{ borderBottom: "1px solid var(--line)" }}>
+                      <td style={{ padding: "10px 6px", whiteSpace: "nowrap" }}>
+                        {new Date(ord.created_at).toLocaleString("es-PE", { dateStyle: "short", timeStyle: "short" })}
+                      </td>
+                      <td style={{ padding: "10px 6px" }}>
+                        <b>{ord.customer_name || "Cliente"}</b>
+                        <span className="mute" style={{ display: "block", fontSize: 11 }}>{ord.customer_email || "Sin email"}</span>
+                      </td>
+                      <td style={{ padding: "10px 6px" }}>{ord.item_name}</td>
+                      <td style={{ padding: "10px 6px" }}>
+                        <span className="chip" style={{ fontSize: 10 }}>{ord.payment_method.toUpperCase()}</span>
+                      </td>
+                      <td style={{ padding: "10px 6px", fontWeight: 700 }}>
+                        {ord.currency} {ord.amount}
+                      </td>
+                      <td style={{ padding: "10px 6px", fontFamily: "monospace" }}>
+                        {ord.reference_code || "—"}
+                      </td>
+                      <td style={{ padding: "10px 6px" }}>
+                        <span className={`chip ${ord.status === "approved" ? "chip--emerald" : "chip--gold"}`}>
+                          {ord.status === "approved" ? "APROBADO" : "PENDIENTE"}
+                        </span>
+                      </td>
+                      <td style={{ padding: "10px 6px", textAlign: "right" }}>
+                        {ord.status !== "approved" ? (
+                          <button
+                            className="btn btn--sm btn--primary"
+                            onClick={() => handleApproveOrder(ord.id)}
+                            style={{ fontSize: 12, padding: "4px 8px" }}
+                          >
+                            <CheckCircle2 size={13} /> Aprobar
+                          </button>
+                        ) : (
+                          <span className="mute" style={{ fontSize: 11 }}>Completado</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
 
       <div className="billing-overview">
         <div className="card billing-credits">

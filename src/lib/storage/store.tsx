@@ -32,6 +32,7 @@ import {
   type ScanRecord,
   type ToastMessage,
 } from "./types";
+import { supabase, checkIsAdmin, type User, type Session } from "../supabase/client";
 
 interface StudioContextValue {
   ready: boolean;
@@ -41,6 +42,14 @@ interface StudioContextValue {
   renders: RenderRecord[];
   certs: Certificate[];
   prefs: Prefs;
+  user: User | null;
+  session: Session | null;
+  isAdmin: boolean;
+  authModalOpen: boolean;
+  authModalMode: "signin" | "signup";
+  openAuthModal: (mode?: "signin" | "signup") => void;
+  closeAuthModal: () => void;
+  signOut: () => Promise<void>;
   toasts: ToastMessage[];
   toast: (text: string, kind?: ToastMessage["kind"]) => void;
   dismissToast: (id: string) => void;
@@ -114,8 +123,78 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const [renders, setRenders] = useState<RenderRecord[]>([]);
   const [certs, setCerts] = useState<Certificate[]>([]);
   const [prefs, setPrefs] = useState<Prefs>(() => loadPrefs(DEFAULT_PREFS));
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<"signin" | "signup">("signin");
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const timers = useRef<Record<string, number>>({});
+
+  const isAdmin = useMemo(() => checkIsAdmin(user?.email), [user]);
+
+  const openAuthModal = useCallback((mode: "signin" | "signup" = "signin") => {
+    setAuthModalMode(mode);
+    setAuthModalOpen(true);
+  }, []);
+
+  const closeAuthModal = useCallback(() => {
+    setAuthModalOpen(false);
+  }, []);
+
+  // Escuchar estado de autenticación en Supabase
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setUser(data.session?.user ?? null);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+      setSession(newSession);
+      const currentUser = newSession?.user ?? null;
+      setUser(currentUser);
+
+      if (currentUser) {
+        const admin = checkIsAdmin(currentUser.email);
+        if (admin) {
+          setPrefs((prev) => ({
+            ...prev,
+            email: currentUser.email ?? prev.email,
+            artistName: "URBINA ASESORÍA E INVERSIONES S.A.C.",
+            fullName: "Moisés Urbina (Administrador)",
+            plan: "pro",
+            credits: 999_999_999,
+          }));
+        } else {
+          try {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("*")
+              .eq("id", currentUser.id)
+              .single();
+
+            if (profile) {
+              setPrefs((prev) => ({
+                ...prev,
+                email: currentUser.email ?? prev.email,
+                artistName: profile.artist_name || prev.artistName,
+                fullName: profile.full_name || prev.fullName,
+                plan: (profile.plan as "free" | "pro") || "free",
+                credits: profile.credits ?? 1850,
+              }));
+            }
+          } catch (e) {
+            console.error("Error sincronizando perfil Supabase:", e);
+          }
+        }
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -343,27 +422,64 @@ export function StudioProvider({ children }: { children: ReactNode }) {
 
   const spend = useCallback(
     (amount: number, concept: string) => {
+      if (isAdmin) {
+        return true; // Administrador tiene consumo libre ilimitado
+      }
       if (prefs.credits < amount) {
         toast(`Créditos insuficientes para ${concept}. Te faltan ${amount - prefs.credits}.`, "err");
         return false;
       }
-      setPrefs((prev) => ({ ...prev, credits: Math.max(0, prev.credits - amount) }));
+      const newCredits = Math.max(0, prefs.credits - amount);
+      setPrefs((prev) => ({ ...prev, credits: newCredits }));
+
+      if (user?.id) {
+        supabase
+          .from("profiles")
+          .update({ credits: newCredits, updated_at: new Date().toISOString() })
+          .eq("id", user.id)
+          .then();
+      }
       return true;
     },
-    [prefs.credits, toast],
+    [isAdmin, prefs.credits, toast, user],
   );
 
   const addCredits = useCallback(
     (amount: number, concept = "Créditos añadidos") => {
-      setPrefs((prev) => ({ ...prev, credits: prev.credits + amount }));
+      if (isAdmin) return;
+      const newCredits = prefs.credits + amount;
+      setPrefs((prev) => ({ ...prev, credits: newCredits }));
       toast(`${concept} · +${amount.toLocaleString("es-ES")} créditos`, "ok");
+
+      if (user?.id) {
+        supabase
+          .from("profiles")
+          .update({ credits: newCredits, updated_at: new Date().toISOString() })
+          .eq("id", user.id)
+          .then();
+      }
     },
-    [toast],
+    [isAdmin, prefs.credits, toast, user],
   );
 
   const setPlan = useCallback((plan: Prefs["plan"]) => {
     setPrefs((prev) => ({ ...prev, plan }));
-  }, []);
+    if (user?.id && !isAdmin) {
+      supabase
+        .from("profiles")
+        .update({ plan, updated_at: new Date().toISOString() })
+        .eq("id", user.id)
+        .then();
+    }
+  }, [isAdmin, user]);
+
+  const signOut = useCallback(async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setSession(null);
+    setPrefs(DEFAULT_PREFS);
+    toast("Sesión cerrada correctamente.", "info");
+  }, [toast]);
 
   const toggleTheme = useCallback(() => {
     setPrefs((prev) => ({ ...prev, theme: prev.theme === "dark" ? "light" : "dark" }));
@@ -383,6 +499,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       renders,
       certs,
       prefs,
+      user,
+      session,
+      isAdmin,
+      authModalOpen,
+      authModalMode,
+      openAuthModal,
+      closeAuthModal,
+      signOut,
       toasts,
       toast,
       dismissToast,
@@ -410,6 +534,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       renders,
       certs,
       prefs,
+      user,
+      session,
+      isAdmin,
+      authModalOpen,
+      authModalMode,
+      openAuthModal,
+      closeAuthModal,
+      signOut,
       toasts,
       toast,
       dismissToast,

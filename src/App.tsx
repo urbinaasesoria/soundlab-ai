@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-route
 import { AlertTriangle, RotateCcw } from "lucide-react";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Shell } from "./components/Shell";
+import { AuthGuard } from "./components/AuthGuard";
 import { Logo } from "./components/Logo";
 import { BRAND } from "./lib/brand";
 import { StudioProvider, useStudio } from "./lib/storage/store";
@@ -118,19 +119,24 @@ export function App() {
                 <Route path="/report/:scanId" element={<ReportPage />} />
                 <Route element={<Shell />}>
                   <Route index element={<HomePage />} />
-                  <Route path="projects" element={<ProjectsPage />} />
-                  <Route path="projects/:id" element={<ProjectDetailPage />} />
-                  <Route path="scan" element={<ScanPage />} />
-                  <Route path="forensic" element={<ForensicPage />} />
-                  <Route path="humanizer" element={<HumanizerPage />} />
-                  <Route path="suno" element={<SunoPage />} />
-                  <Route path="compositor" element={<CompositorPage />} />
-                  <Route path="comparador" element={<BlindTestPage />} />
-                  <Route path="shield" element={<ShieldPage />} />
-                  <Route path="coverizador" element={<CoverizadorPage />} />
                   <Route path="billing" element={<BillingPage />} />
                   <Route path="profile" element={<ProfilePage />} />
                   <Route path="legal" element={<LegalPage />} />
+
+                  {/* Rutas exclusivas del laboratorio (requieren registro / inicio de sesión) */}
+                  <Route element={<AuthGuard />}>
+                    <Route path="projects" element={<ProjectsPage />} />
+                    <Route path="projects/:id" element={<ProjectDetailPage />} />
+                    <Route path="scan" element={<ScanPage />} />
+                    <Route path="forensic" element={<ForensicPage />} />
+                    <Route path="humanizer" element={<HumanizerPage />} />
+                    <Route path="suno" element={<SunoPage />} />
+                    <Route path="compositor" element={<CompositorPage />} />
+                    <Route path="comparador" element={<BlindTestPage />} />
+                    <Route path="shield" element={<ShieldPage />} />
+                    <Route path="coverizador" element={<CoverizadorPage />} />
+                  </Route>
+
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Route>
               </Routes>

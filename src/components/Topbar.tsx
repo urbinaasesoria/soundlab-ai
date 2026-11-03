@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Bell, LogIn, Menu, Moon, ScanLine, Sun, UserCheck } from "lucide-react";
+import { Bell, LogIn, Menu, Moon, ScanLine, Sun, UserCheck, UserPlus } from "lucide-react";
 import { useStudio } from "../lib/storage/store";
 import { formatDateTime } from "../lib/utils";
 import { zoneFromProbability } from "../lib/audio/analyzer";
@@ -55,14 +55,24 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
             </span>
           </Link>
         ) : (
-          <button
-            type="button"
-            className="btn btn--sm btn--primary"
-            onClick={() => openAuthModal("signin")}
-            style={{ gap: 6 }}
-          >
-            <LogIn size={13} /> Iniciar Sesión
-          </button>
+          <div className="row-flex" style={{ gap: 8 }}>
+            <button
+              type="button"
+              className="btn btn--sm btn--gold"
+              onClick={() => openAuthModal("signup")}
+              style={{ gap: 6, fontWeight: 700 }}
+            >
+              <UserPlus size={13} /> Probar Gratis
+            </button>
+            <button
+              type="button"
+              className="btn btn--sm btn--ghost"
+              onClick={() => openAuthModal("signin")}
+              style={{ gap: 6 }}
+            >
+              <LogIn size={13} /> Iniciar Sesión
+            </button>
+          </div>
         )}
 
         <span className="local-chip" title="100 % local: tu audio nunca sale del navegador">

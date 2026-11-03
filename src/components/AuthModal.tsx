@@ -96,6 +96,28 @@ export function AuthModal({
     }
   };
 
+  const handleResetPassword = async () => {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) {
+      setErrorMsg("Ingresa tu correo para enviarte el enlace de restablecimiento.");
+      return;
+    }
+    setBusy(true);
+    setErrorMsg(null);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+        redirectTo: `${window.location.origin}/profile`,
+      });
+      if (error) throw error;
+      setSuccessMsg(`Se ha enviado un enlace a ${cleanEmail} para restablecer tu contraseña.`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error al enviar el correo.";
+      setErrorMsg(msg);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <Modal
       open={open}
@@ -195,9 +217,22 @@ export function AuthModal({
               />
               <Lock size={15} style={{ position: "absolute", left: 10, color: "var(--muted)" }} />
             </div>
-            <span className="mute" style={{ fontSize: 11, marginTop: 4, display: "block" }}>
-              Mínimo 6 caracteres. Acceso seguro cifrado con Supabase.
-            </span>
+            <div className="row-flex" style={{ justifyContent: "space-between", marginTop: 4 }}>
+              <span className="mute" style={{ fontSize: 11 }}>
+                Mínimo 6 caracteres. Acceso seguro cifrado con Supabase.
+              </span>
+              {mode === "signin" && (
+                <button
+                  type="button"
+                  className="link link--mono"
+                  style={{ fontSize: 11, background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                  onClick={handleResetPassword}
+                  disabled={busy}
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="row-flex" style={{ justifyContent: "flex-end", marginTop: 8 }}>

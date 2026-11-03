@@ -17,6 +17,7 @@ import { useStudio } from "../lib/storage/store";
 import { formatDate, formatNumber, formatTime } from "../lib/utils";
 import { zoneFromProbability, ZONE_LABEL } from "../lib/audio/analyzer";
 import { resultHeadline } from "../components/ResultView";
+import { LandingPage } from "./Landing";
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -29,7 +30,12 @@ function greeting(): string {
 const ZONE_CLASS: Record<string, string> = { optimo: "ok", seguro: "ok", riesgo: "warn", peligro: "bad" };
 
 export function HomePage() {
-  const { prefs, projects, scans, renders, certs } = useStudio();
+  const { user, prefs, projects, scans, renders, certs } = useStudio();
+
+  if (!user) {
+    return <LandingPage />;
+  }
+
   const sorted = scans.slice().sort((a, b) => b.createdAt - a.createdAt);
   const latest = sorted[0];
   const latestProject = projects.find((p) => p.id === latest?.projectId);

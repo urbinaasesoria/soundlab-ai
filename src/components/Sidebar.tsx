@@ -116,17 +116,39 @@ export function Sidebar({ open, collapsed, onClose, onCollapse, onLogout }: Side
           )}
         </nav>
 
-        <NavLink to="/billing" className="credits-box" onClick={onClose} aria-label="Créditos y suscripción">
-          <span className="credits-box__row">
-            <Coins size={14} color="var(--gold-ink)" />
-            <span className="credits-box__value">{formatNumber(prefs.credits)}</span>
-            <span className="credits-box__chip">{prefs.plan === "pro" ? "PRO" : "FREE"}</span>
-            <ChevronDown size={14} className="credits-box__chev" />
-          </span>
-          <span className="credits-box__meter">
-            <span className="credits-box__fill" style={{ width: `${pct}%` }} />
-          </span>
-        </NavLink>
+        {user ? (
+          <NavLink to="/billing" className="credits-box" onClick={onClose} aria-label="Créditos y suscripción">
+            <span className="credits-box__row">
+              <Coins size={14} color="var(--gold-ink)" />
+              <span className="credits-box__value">{formatNumber(prefs.credits)}</span>
+              <span className="credits-box__chip">{prefs.plan === "pro" ? "PRO" : "FREE"}</span>
+              <ChevronDown size={14} className="credits-box__chev" />
+            </span>
+            <span className="credits-box__meter">
+              <span className="credits-box__fill" style={{ width: `${pct}%` }} />
+            </span>
+          </NavLink>
+        ) : (
+          <button
+            type="button"
+            className="credits-box"
+            onClick={() => {
+              openAuthModal("signup");
+              onClose();
+            }}
+            aria-label="Registrarse gratis"
+            style={{ width: "100%", textAlign: "left", background: "none", border: "1px dashed var(--line-strong)", cursor: "pointer" }}
+          >
+            <span className="credits-box__row">
+              <Sparkles size={14} color="var(--gold-ink)" />
+              <span className="credits-box__value" style={{ fontSize: 12 }}>1.850 GRATIS</span>
+              <span className="credits-box__chip chip--gold">REGISTRO</span>
+            </span>
+            <span style={{ fontSize: 11, color: "var(--text-soft)", display: "block", marginTop: 4 }}>
+              Crear cuenta de acceso
+            </span>
+          </button>
+        )}
       </div>
 
       <div className="sidebar__footer">

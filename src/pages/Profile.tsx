@@ -6,9 +6,12 @@ import {
   Check,
   ChevronRight,
   Download,
+  Eye,
+  EyeOff,
   Globe2,
   HardDrive,
   Info,
+  KeyRound,
   Lock,
   LogIn,
   LogOut,
@@ -24,6 +27,7 @@ import { COUNTRIES } from "../lib/data/countries";
 import { clearAudioStore } from "../lib/storage/db";
 import { useStudio } from "../lib/storage/store";
 import { downloadText, formatBytes, formatDateLong, formatNumber } from "../lib/utils";
+import { supabase } from "../lib/supabase/client";
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -46,6 +50,45 @@ export function ProfilePage() {
   const [resetOpen, setResetOpen] = useState(false);
   const [purgeOpen, setPurgeOpen] = useState(false);
   const [storageInfo, setStorageInfo] = useState<{ usage: number; quota: number } | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [updatingPassword, setUpdatingPassword] = useState(false);
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) {
+      openAuthModal("signin");
+      return;
+    }
+    if (!newPassword || newPassword.length < 6) {
+      toast("La nueva contraseña debe tener al menos 6 caracteres.", "err");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast("Las contraseñas no coinciden. Por favor verifica.", "err");
+      return;
+    }
+
+    setUpdatingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      toast(
+        isAdmin
+          ? "¡Clave de Administrador actualizada exitosamente en Supabase!"
+          : "¡Contraseña actualizada exitosamente!",
+        "ok"
+      );
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error al actualizar la contraseña";
+      toast(msg, "err");
+    } finally {
+      setUpdatingPassword(false);
+    }
+  };
 
   const fetchStorage = () => {
     if (typeof navigator !== "undefined" && navigator.storage && navigator.storage.estimate) {
@@ -450,6 +493,112 @@ export function ProfilePage() {
           </div>
         </div>
       </form>
+
+      {/* SEGURIDAD Y CLAVE DE ACCESO (ADMINISTRADOR Y USUARIO) */}
+      <section className="card profile-card" style={{ marginBottom: 20 }}>
+        <div className="profile-card__head">
+          <div>
+            <div className="card__label">SEGURIDAD Y AUTENTICACIÓN</div>
+            <h2>{isAdmin ? "Clave de Acceso de Administrador" : "Clave de Acceso a tu Cuenta"}</h2>
+          </div>
+          <span className={`chip ${isAdmin ? "chip--gold" : "chip--emerald"}`}>
+            <Lock size={11} /> {isAdmin ? "👑 PANEL ADMINISTRADOR" : user ? "CUENTA VINCULADA" : "SESIÓN REQUERIDA"}
+          </span>
+        </div>
+
+        {user ? (
+          <div>
+            <p className="mute" style={{ fontSize: 13.5, lineHeight: 1.6, marginBottom: 18 }}>
+              {isAdmin ? (
+                <>
+                  Tu cuenta de administrador está vinculada a <b>{user.email}</b>. Aquí puedes cambiar o definir tu contraseña
+                  de acceso a la plataforma SoundLab AI y al panel de control. La clave se sincroniza de inmediato con Supabase Auth.
+                </>
+              ) : (
+                <>
+                  Tu cuenta está registrada con <b>{user.email}</b>. Puedes cambiar tu contraseña de acceso cuando lo desees.
+                </>
+              )}
+            </p>
+
+            <form onSubmit={handleUpdatePassword} style={{ maxWidth: 640 }}>
+              <div className="form-grid" style={{ marginBottom: 16 }}>
+                <div className="field">
+                  <label className="label" htmlFor="new-pass">NUEVA CONTRASEÑA *</label>
+                  <div className="input-affix">
+                    <KeyRound size={14} />
+                    <input
+                      id="new-pass"
+                      className="input"
+                      type={showPassword ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Mínimo 6 caracteres"
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => setShowPassword((v) => !v)}
+                      style={{ padding: "0 8px", height: "100%", border: "none" }}
+                      aria-label={showPassword ? "Ocultar contraseña" : "Ver contraseña"}
+                    >
+                      {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                  </div>
+                  <span className="field__hint">Usa una combinación segura de letras y números.</span>
+                </div>
+
+                <div className="field">
+                  <label className="label" htmlFor="confirm-pass">CONFIRMAR CONTRASEÑA *</label>
+                  <div className="input-affix">
+                    <Lock size={14} />
+                    <input
+                      id="confirm-pass"
+                      className="input"
+                      type={showPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Repite tu nueva contraseña"
+                      autoComplete="new-password"
+                    />
+                  </div>
+                  <span className="field__hint">Debe coincidir exactamente con la contraseña anterior.</span>
+                </div>
+              </div>
+
+              <div className="row-flex" style={{ gap: 12 }}>
+                <button
+                  type="submit"
+                  className="btn btn--gold"
+                  disabled={updatingPassword || !newPassword || !confirmPassword}
+                >
+                  <Save size={14} /> {updatingPassword ? "Actualizando clave..." : "Guardar Nueva Contraseña"}
+                </button>
+                {isAdmin && (
+                  <span className="chip chip--gold" style={{ fontSize: 11 }}>
+                    👑 Permisos de Administrador Activos
+                  </span>
+                )}
+              </div>
+            </form>
+          </div>
+        ) : (
+          <div>
+            <p className="mute" style={{ fontSize: 13.5, lineHeight: 1.6, marginBottom: 16 }}>
+              Estás navegando en modo invitado sin una sesión remota iniciada. Para configurar o cambiar tu clave de administrador o de usuario, por favor inicia sesión o crea tu cuenta.
+            </p>
+            <div className="row-flex" style={{ gap: 10 }}>
+              <button type="button" className="btn btn--primary" onClick={() => openAuthModal("signin")}>
+                <LogIn size={14} /> Iniciar Sesión como Administrador
+              </button>
+              <button type="button" className="btn btn--gold" onClick={() => openAuthModal("signup")}>
+                <UserRound size={14} /> Registrar Nueva Cuenta
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
 
       <section className="card" style={{ marginBottom: 20 }}>
         <div className="profile-card__head">

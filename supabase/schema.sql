@@ -152,3 +152,28 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- -------------------------------------------------------------
+-- 5. TABLA DE LISTA DE ESPERA (LEADS / EARLY ACCESS)
+-- -------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.waitlist (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT NOT NULL,
+  artist_name TEXT,
+  feature TEXT NOT NULL DEFAULT 'mixing_mastering',
+  genre TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.waitlist ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Cualquiera puede registrarse en la lista de espera"
+  ON public.waitlist FOR INSERT
+  WITH CHECK (true);
+
+CREATE POLICY "Solo administradores pueden leer la lista de espera"
+  ON public.waitlist FOR SELECT
+  USING (
+    auth.jwt() ->> 'email' IN ('urbinaasesoriaeinversiones@gmail.com', 'murbinasojo@gmail.com')
+  );
+
+

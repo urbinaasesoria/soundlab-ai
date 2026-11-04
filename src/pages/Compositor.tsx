@@ -438,8 +438,8 @@ export function CompositorPage() {
                         : "Generar letra con IA"}
                 </button>
                 <span>
-                  Escribe la letra a partir de tu idea y ajusta el style prompt para que encajen. Respeta el
-                  manual de SUNO 6.0: estribillo de 2–4 líneas, metatags y cierre <code>[End]</code>.
+                  Escribe la letra a partir de tu idea y ajusta el style prompt para que encajen. Respeta la estructura
+                  óptima de Suno (v3.5 / v4) y Udio: estribillo de 2–4 líneas, metatags y cierre <code>[End]</code>.
                 </span>
               </div>
             )}

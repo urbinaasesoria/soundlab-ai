@@ -21,6 +21,8 @@ const YEAR = new Date().getFullYear();
 export const BRAND = {
   /** Razón social completa del titular. No abreviar. */
   legalName: "URBINA ASESORÍA E INVERSIONES S.A.C.",
+  /** Registro Único de Contribuyentes oficial (SUNAT / Perú). */
+  ruc: "20614532551",
   /** Marca verbal principal (se muestra en el logotipo). */
   wordmark: "SOUNDLAB",
   /** Línea secundaria bajo la marca verbal. */
@@ -44,8 +46,10 @@ export const BRAND = {
     '"SOUNDLAB-DSP", su documentación y su marca son propiedad exclusiva de ' +
     "URBINA ASESORÍA E INVERSIONES S.A.C. Queda prohibida su reproducción, distribución, modificación " +
     "o uso comercial sin autorización expresa y por escrito del titular.",
-  /** Dirección de contacto pública. Sustituir por la definitiva antes del lanzamiento. */
-  email: "contacto@soundlab.ai",
+  /** Dirección de contacto corporativa oficial. */
+  email: "urbinaasesoriaeinversiones@gmail.com",
+  supportEmail: "urbinaasesoriaeinversiones@gmail.com",
+  companyAddress: "Lima, Perú",
   /** Claves de almacenamiento local (IndexedDB y localStorage). */
   storage: {
     db: "soundlab-ai",

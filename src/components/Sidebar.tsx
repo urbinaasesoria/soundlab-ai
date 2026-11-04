@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
   Activity,
@@ -23,6 +24,7 @@ import {
   Zap,
 } from "lucide-react";
 import { Logo } from "./Logo";
+import { WaitlistModal } from "./WaitlistModal";
 import { BRAND } from "../lib/brand";
 import { useStudio } from "../lib/storage/store";
 import { formatNumber } from "../lib/utils";
@@ -50,6 +52,7 @@ const TOOL_LINKS = [
 
 export function Sidebar({ open, collapsed, onClose, onCollapse, onLogout }: SidebarProps) {
   const { prefs, user, isAdmin, openAuthModal, toast } = useStudio();
+  const [waitlistFeature, setWaitlistFeature] = useState<string | null>(null);
   const creditsMax = prefs.plan === "pro" ? 1_000_000 : 2950;
   const pct = Math.min(100, (prefs.credits / creditsMax) * 100);
 
@@ -93,8 +96,8 @@ export function Sidebar({ open, collapsed, onClose, onCollapse, onLogout }: Side
               <button
                 key={to}
                 className="nav-item nav-item--locked"
-                title={`${label} · próximamente`}
-                onClick={() => toast(`${label} estará disponible en una próxima versión.`, "info")}
+                title={`${label} · Haz clic para unirte a la lista de espera prioritaria`}
+                onClick={() => setWaitlistFeature(label)}
               >
                 <Icon size={18} />
                 <span className="nav-item__label">{label}</span>
@@ -192,6 +195,12 @@ export function Sidebar({ open, collapsed, onClose, onCollapse, onLogout }: Side
         )}
         <div className="sidebar__legal">{BRAND.copyrightShort}</div>
       </div>
+
+      <WaitlistModal
+        open={Boolean(waitlistFeature)}
+        featureName={waitlistFeature || "Herramienta IA"}
+        onClose={() => setWaitlistFeature(null)}
+      />
     </aside>
   );
 }

@@ -70,7 +70,7 @@ const PLANS: PlanChoice[] = [
   {
     id: "pro-monthly",
     name: "Pro Mensual",
-    prices: { PEN: 39, USD: 19, EUR: 19 },
+    prices: { PEN: 35, USD: 9.9, EUR: 9.9 },
     cadence: "/mes",
     credits: 1_000_000,
     note: "Suscripción mensual flexible. Cancela cuando quieras sin permanencia.",
@@ -78,18 +78,18 @@ const PLANS: PlanChoice[] = [
   {
     id: "pro-annual",
     name: "Pro Anual",
-    prices: { PEN: 299, USD: 120, EUR: 120 },
+    prices: { PEN: 249, USD: 69, EUR: 69 },
     cadence: "/año",
     credits: 1_000_000,
-    note: "Equivalente a S/ 25 /mes ($10 /mo) · Ahorras más del 35% en pago anual.",
+    note: "Equivalente a S/ 20 /mes ($5.75 /mo) · Ahorras más del 40% en pago anual.",
   },
 ];
 
 const PACKS: PackChoice[] = [
-  { id: "starter", name: "Starter", credits: 500, bonus: 50, prices: { PEN: 15, USD: 8, EUR: 8 } },
-  { id: "studio", name: "Studio", credits: 1_500, bonus: 200, prices: { PEN: 39, USD: 20, EUR: 20 } },
-  { id: "pro", name: "Pro Pack", credits: 5_000, bonus: 800, prices: { PEN: 99, USD: 49, EUR: 49 } },
-  { id: "label", name: "Label", credits: 15_000, bonus: 3_000, prices: { PEN: 199, USD: 99, EUR: 99 } },
+  { id: "starter", name: "Starter", credits: 500, bonus: 50, prices: { PEN: 15, USD: 4.9, EUR: 4.9 } },
+  { id: "studio", name: "Studio", credits: 1_500, bonus: 200, prices: { PEN: 29, USD: 9.9, EUR: 9.9 } },
+  { id: "pro", name: "Pro Pack", credits: 5_000, bonus: 800, prices: { PEN: 69, USD: 19, EUR: 19 } },
+  { id: "label", name: "Label", credits: 15_000, bonus: 3_000, prices: { PEN: 149, USD: 49, EUR: 49 } },
 ];
 
 const FREE_FEATURES = [

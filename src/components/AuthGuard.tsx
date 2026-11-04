@@ -80,7 +80,7 @@ export function AuthGuard() {
             margin: "0 auto 26px",
           }}
         >
-          Para usar las herramientas de diagnóstico acústico BS.1770, composición con Suno 6.0, texturizado DSP
+          Para usar las herramientas de diagnóstico acústico BS.1770, composición de prompts y letras con IA, texturizado DSP
           y gestión de proyectos necesitas una cuenta activa.
         </p>
 
@@ -149,3 +149,4 @@ export function AuthGuard() {
     </div>
   );
 }
+

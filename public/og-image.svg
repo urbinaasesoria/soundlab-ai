@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="30%" r="80%">
+      <stop offset="0%" stop-color="#18191e"/>
+      <stop offset="100%" stop-color="#07080a"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffe9a3"/>
+      <stop offset="50%" stop-color="#f2ca50"/>
+      <stop offset="100%" stop-color="#c08a12"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="40" y="40" width="1120" height="550" rx="20" fill="none" stroke="#252730" stroke-width="2"/>
+
+  <!-- Logo Icon -->
+  <g transform="translate(100, 140) scale(2.2)">
+    <rect width="48" height="48" rx="11" fill="#0c0d11" stroke="#f2ca50" stroke-width="1.2"/>
+    <g stroke="url(#gold)" stroke-width="2.6" stroke-linecap="round">
+      <line x1="15.5" y1="27" x2="15.5" y2="37"/>
+      <line x1="21" y1="21" x2="21" y2="37"/>
+      <line x1="26.5" y1="15" x2="26.5" y2="37"/>
+      <line x1="32" y1="20" x2="32" y2="37"/>
+    </g>
+    <circle cx="35" cy="22" r="1.6" fill="#00ce59"/>
+  </g>
+
+  <!-- Title & Subtitle -->
+  <text x="240" y="195" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="700" fill="#f2ca50" letter-spacing="3">SOUNDLAB AI · SUITE DE ESTUDIO</text>
+  <text x="240" y="245" font-family="system-ui, -apple-system, sans-serif" font-size="44" font-weight="800" fill="#ffffff" letter-spacing="-1">Optimizado para SUNO &amp; UDIO</text>
+  
+  <text x="100" y="340" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="#a0a3b0" width="1000">
+    Diagnóstico acústico comercial para Spotify (BS.1770) · DSP 24-bit · Sello SHA-256
+  </text>
+  <text x="100" y="380" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="600" fill="#00ce59">
+    🔒 100% Privado en tu Navegador — Tu audio nunca se sube a internet
+  </text>
+
+  <!-- Badges -->
+  <g transform="translate(100, 440)">
+    <rect width="220" height="46" rx="8" fill="#14161b" stroke="#333642" stroke-width="1"/>
+    <text x="24" y="29" font-family="system-ui, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Plan Free: 1.850 CR</text>
+
+    <rect x="240" width="240" height="46" rx="8" fill="#14161b" stroke="#f2ca50" stroke-width="1.2"/>
+    <text x="264" y="29" font-family="system-ui, sans-serif" font-size="16" font-weight="700" fill="#f2ca50">Plan Pro: $9.90 / mes</text>
+  </g>
+
+  <!-- Footer -->
+  <text x="100" y="550" font-family="system-ui, sans-serif" font-size="15" fill="#6c7080">
+    © 2026 URBINA ASESORÍA E INVERSIONES S.A.C. · RUC 20614532551 · info@urbinaaei.com
+  </text>
+</svg>

@@ -9,33 +9,40 @@
     <meta name="author" content="URBINA ASESORÍA E INVERSIONES S.A.C." />
     <meta name="copyright" content="© 2026 URBINA ASESORÍA E INVERSIONES S.A.C." />
     <meta name="robots" content="index, follow" />
-    <!-- Dominio de producción oficial -->
+    <!-- Dominio de producción oficial y alternate hreflang -->
     <link rel="canonical" href="https://soundlab-ai-app.vercel.app/" />
+    <link rel="alternate" hreflang="es" href="https://soundlab-ai-app.vercel.app/" />
+    <link rel="alternate" hreflang="x-default" href="https://soundlab-ai-app.vercel.app/" />
 
     <title>SoundLab AI — Copiloto y Suite de Producción Musical Asistida por IA</title>
     <meta
       name="description"
-      content="Optimiza y profesionaliza tus canciones creadas con Suno y Udio: diagnóstico acústico comercial para Spotify (LUFS BS.1770), eliminación de artefactos robóticos, compositor de letras estructuradas y comprobante de integridad técnica SHA-256. 100% privado en tu navegador."
+      content="Optimizado para SUNO &amp; UDIO. Diagnóstico acústico comercial para Spotify (LUFS BS.1770), atenuación de asperezas sintéticas, compositor de letras estructuradas y comprobante de integridad técnica SHA-256. 100% privado en tu navegador."
     />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="SoundLab AI" />
-    <meta property="og:title" content="SoundLab AI — Copiloto y Suite de Producción Musical Asistida por IA" />
+    <meta property="og:title" content="SoundLab AI — Optimizado para SUNO &amp; UDIO" />
     <meta
       property="og:description"
-      content="Diagnóstico técnico de tus canciones, compositor de prompts para Suno y Udio, texturizador analógico y sello de integridad técnica. 100 % privado: tu audio nunca sale de tu equipo."
+      content="Diagnóstico técnico de tus canciones, compositor de prompts para Suno y Udio, texturizador analógico y sello de integridad técnica. 100% privado: tu audio nunca sale de tu equipo."
     />
     <meta property="og:url" content="https://soundlab-ai-app.vercel.app/" />
+    <meta property="og:image" content="https://soundlab-ai-app.vercel.app/og-image.svg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/svg+xml" />
     <meta property="og:locale" content="es_PE" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="SoundLab AI — Copiloto de Producción Musical con IA" />
+    <meta name="twitter:title" content="SoundLab AI — Optimizado para SUNO &amp; UDIO" />
     <meta
       name="twitter:description"
-      content="Haz que tu música generada con IA suene profesional y lista para plataformas de streaming. 100 % local en tu navegador."
+      content="Haz que tu música generada con IA suene profesional y lista para plataformas de streaming. 100% local en tu navegador."
     />
+    <meta name="twitter:image" content="https://soundlab-ai-app.vercel.app/og-image.svg" />
 
     <script type="application/ld+json">
       {
@@ -44,14 +51,16 @@
         "name": "SoundLab AI",
         "applicationCategory": "MultimediaApplication",
         "operatingSystem": "Web",
-        "description": "Herramienta de apoyo a la producción musical asistida por IA: diagnóstico técnico de masters, composición de prompts para Suno con presets de género, corrección con DSP real y certificación de integridad con SHA-256.",
+        "description": "Herramienta de apoyo a la producción musical asistida por IA: diagnóstico acústico de masters, composición de prompts para Suno y Udio con presets de género, corrección con DSP y sello de integridad técnica con SHA-256.",
         "author": {
           "@type": "Organization",
-          "name": "URBINA ASESORÍA E INVERSIONES S.A.C."
+          "name": "URBINA ASESORÍA E INVERSIONES S.A.C.",
+          "email": "info@urbinaaei.com"
         },
         "copyrightHolder": {
           "@type": "Organization",
-          "name": "URBINA ASESORÍA E INVERSIONES S.A.C."
+          "name": "URBINA ASESORÍA E INVERSIONES S.A.C.",
+          "email": "info@urbinaaei.com"
         },
         "copyrightYear": 2026,
         "offers": {
@@ -63,7 +72,28 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Fallback semántico estático para rastreadores de motores de búsqueda sin JS -->
+    <div id="root">
+      <noscript>
+        <div style="font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; line-height: 1.6;">
+          <h1>SoundLab AI — Suite de Producción Musical Asistida por IA</h1>
+          <p><strong>Optimizado para SUNO &amp; UDIO</strong></p>
+          <p>
+            SoundLab AI es una suite de herramientas de apoyo técnico a la producción musical con inteligencia artificial.
+            Permite medir el volumen integrado para Spotify y Apple Music (LUFS BS.1770), atenuar asperezas de audio sintético,
+            estructurar letras y prompts con metatags musicales [Intro], [Verse], [Chorus] y certificar la integridad técnica de tus archivos WAV con SHA-256.
+          </p>
+          <h2>Procesamiento 100% Privado</h2>
+          <p>
+            Tu música nunca se transmite ni almacena en servidores externos: todo el procesamiento se ejecuta en tu propio navegador web.
+          </p>
+          <h2>Información Corporativa</h2>
+          <p>
+            Titular: URBINA ASESORÍA E INVERSIONES S.A.C. · RUC: 20614532551 · Correo: info@urbinaaei.com · Lima, Perú.
+          </p>
+        </div>
+      </noscript>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

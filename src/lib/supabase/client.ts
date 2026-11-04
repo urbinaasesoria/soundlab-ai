@@ -18,6 +18,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 
 /** Correos con privilegio exclusivo de Administrador */
 export const ADMIN_EMAILS = [
+  "info@urbinaaei.com",
   "urbinaasesoriaeinversiones@gmail.com",
   "murbinasojo@gmail.com",
 ];

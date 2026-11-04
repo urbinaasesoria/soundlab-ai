@@ -47,8 +47,8 @@ export const BRAND = {
     "URBINA ASESORÍA E INVERSIONES S.A.C. Queda prohibida su reproducción, distribución, modificación " +
     "o uso comercial sin autorización expresa y por escrito del titular.",
   /** Dirección de contacto corporativa oficial. */
-  email: "urbinaasesoriaeinversiones@gmail.com",
-  supportEmail: "urbinaasesoriaeinversiones@gmail.com",
+  email: "info@urbinaaei.com",
+  supportEmail: "info@urbinaaei.com",
   companyAddress: "Lima, Perú",
   /** Claves de almacenamiento local (IndexedDB y localStorage). */
   storage: {

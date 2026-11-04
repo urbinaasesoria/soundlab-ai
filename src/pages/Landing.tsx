@@ -105,7 +105,7 @@ export function LandingPage() {
             color: "var(--text-soft)",
           }}
         >
-          Elimina la aspereza robótica y la saturación de tus canciones de <b>Suno &amp; Udio</b>. Diagnostica el volumen
+          Atenúa asperezas armónicas y previene la saturación digital en tus canciones de <b>Suno &amp; Udio</b>. Diagnostica el volumen
           óptimo para <b>Spotify y Apple Music</b> (LUFS BS.1770), compón letras con estructuras reales y certifica la
           integridad de tus archivos.
           <b style={{ display: "block", marginTop: 10, color: "var(--text)" }}>
@@ -150,51 +150,11 @@ export function LandingPage() {
           </div>
           <div className="row-flex" style={{ gap: 8 }}>
             <Zap size={15} color="var(--gold-ink)" />
-            <span><b>Para Suno &amp; Udio:</b> Optimizado para modelos v3.5 / v4</span>
+            <span><b>Optimizado para SUNO &amp; UDIO</b></span>
           </div>
           <div className="row-flex" style={{ gap: 8 }}>
             <Sparkles size={15} color="var(--primary)" />
             <span><b>Sin tarjeta para empezar:</b> 1.850 créditos gratis</span>
-          </div>
-        </div>
-      </section>
-
-      {/* -------------------- PRUEBA SOCIAL Y MÉTRICAS REALES -------------------- */}
-      <section style={{ marginBottom: 40 }}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: 16,
-            textAlign: "center",
-          }}
-        >
-          <div className="card" style={{ padding: "20px 16px", background: "var(--surface)" }}>
-            <div style={{ fontSize: 28, fontWeight: 800, color: "var(--gold-ink)", marginBottom: 4 }}>
-              +14.800
-            </div>
-            <div style={{ fontSize: 13, color: "var(--text-soft)" }}>Pistas analizadas y optimizadas</div>
-          </div>
-
-          <div className="card" style={{ padding: "20px 16px", background: "var(--surface)" }}>
-            <div style={{ fontSize: 28, fontWeight: 800, color: "var(--emerald-ink)", marginBottom: 4, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-              4.9 <Star size={20} fill="var(--emerald-ink)" color="var(--emerald-ink)" />
-            </div>
-            <div style={{ fontSize: 13, color: "var(--text-soft)" }}>Valoración de productores independientes</div>
-          </div>
-
-          <div className="card" style={{ padding: "20px 16px", background: "var(--surface)" }}>
-            <div style={{ fontSize: 28, fontWeight: 800, color: "var(--primary)", marginBottom: 4 }}>
-              0 bytes
-            </div>
-            <div style={{ fontSize: 13, color: "var(--text-soft)" }}>Transferidos a servidores externos</div>
-          </div>
-
-          <div className="card" style={{ padding: "20px 16px", background: "var(--surface)" }}>
-            <div style={{ fontSize: 28, fontWeight: 800, color: "var(--gold-ink)", marginBottom: 4 }}>
-              &lt; 2 seg
-            </div>
-            <div style={{ fontSize: 13, color: "var(--text-soft)" }}>Tiempo de diagnóstico acústico local</div>
           </div>
         </div>
       </section>
@@ -505,122 +465,37 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* -------------------- TESTIMONIOS DE PRODUCTORES REALES -------------------- */}
-      <section style={{ marginBottom: 48 }}>
-        <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <div className="eyebrow" style={{ color: "var(--gold-ink)", marginBottom: 6 }}>
-            OPINIONES DE LA COMUNIDAD
+      {/* -------------------- FASE BETA & FEEDBACK DE MÚSICOS -------------------- */}
+      <section
+        className="card"
+        style={{
+          padding: "36px 28px",
+          textAlign: "center",
+          marginBottom: 48,
+          background: "var(--surface)",
+          border: "1px dashed var(--line-strong)",
+          borderRadius: 16,
+        }}
+      >
+        <div style={{ maxWidth: 680, margin: "0 auto" }}>
+          <div className="eyebrow" style={{ color: "var(--gold-ink)", marginBottom: 8 }}>
+            FASE DE PRUEBAS &amp; FEEDBACK TÉCNICO
           </div>
-          <h2 style={{ fontSize: "clamp(22px, 3.5vw, 30px)", fontWeight: 800 }}>
-            Lo que dicen Creadores y Productores Musicales
+          <h2 style={{ fontSize: "clamp(22px, 3.5vw, 28px)", fontWeight: 800, marginBottom: 12 }}>
+            ¿Eres músico o productor independiente? Pruébalo gratis
           </h2>
-        </div>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-            gap: 18,
-          }}
-        >
-          <div className="card" style={{ padding: 22, background: "var(--surface)" }}>
-            <div className="row-flex" style={{ gap: 4, marginBottom: 12 }}>
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} size={15} fill="var(--gold-ink)" color="var(--gold-ink)" />
-              ))}
-            </div>
-            <p style={{ fontSize: 14, lineHeight: 1.6, fontStyle: "italic", marginBottom: 14 }}>
-              &quot;Mis canciones de Suno solían sonar plásticas y saturaban al subirlas a Spotify. Con el texturizador y el corrector de loudness BS.1770 ahora tienen la pegada y calidez de un máster comercial.&quot;
-            </p>
-            <div className="row-flex" style={{ gap: 10 }}>
-              <div
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: "50%",
-                  background: "var(--gold)",
-                  color: "#08090b",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontWeight: 800,
-                  fontSize: 13,
-                }}
-              >
-                JM
-              </div>
-              <div>
-                <b style={{ fontSize: 13.5, display: "block" }}>Javier Medina</b>
-                <span className="mute" style={{ fontSize: 11.5 }}>Productor Urbano &amp; Beatmaker</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="card" style={{ padding: 22, background: "var(--surface)" }}>
-            <div className="row-flex" style={{ gap: 4, marginBottom: 12 }}>
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} size={15} fill="var(--gold-ink)" color="var(--gold-ink)" />
-              ))}
-            </div>
-            <p style={{ fontSize: 14, lineHeight: 1.6, fontStyle: "italic", marginBottom: 14 }}>
-              &quot;El compositor de prompts me ahorró horas de prueba y error. Suno ahora sí canta los versos con la métrica que necesito y respeta los coros de 4 líneas sin desordenarse.&quot;
-            </p>
-            <div className="row-flex" style={{ gap: 10 }}>
-              <div
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: "50%",
-                  background: "var(--emerald)",
-                  color: "#08090b",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontWeight: 800,
-                  fontSize: 13,
-                }}
-              >
-                SR
-              </div>
-              <div>
-                <b style={{ fontSize: 13.5, display: "block" }}>Sofía Robledo</b>
-                <span className="mute" style={{ fontSize: 11.5 }}>Cantautora y Creadora de Contenido</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="card" style={{ padding: 22, background: "var(--surface)" }}>
-            <div className="row-flex" style={{ gap: 4, marginBottom: 12 }}>
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} size={15} fill="var(--gold-ink)" color="var(--gold-ink)" />
-              ))}
-            </div>
-            <p style={{ fontSize: 14, lineHeight: 1.6, fontStyle: "italic", marginBottom: 14 }}>
-              &quot;Lo mejor es la privacidad. No tengo que subir archivos de mis clientes a servidores de terceros porque todo se procesa en el navegador. Y el reporte técnico en PDF es muy profesional.&quot;
-            </p>
-            <div className="row-flex" style={{ gap: 10 }}>
-              <div
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: "50%",
-                  background: "var(--primary)",
-                  color: "#fff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontWeight: 800,
-                  fontSize: 13,
-                }}
-              >
-                CD
-              </div>
-              <div>
-                <b style={{ fontSize: 13.5, display: "block" }}>Carlos Delgado</b>
-                <span className="mute" style={{ fontSize: 11.5 }}>Ingeniero de Mezcla &amp; Máster</span>
-              </div>
-            </div>
-          </div>
+          <p className="mute" style={{ fontSize: 14.5, lineHeight: 1.6, marginBottom: 22 }}>
+            Actualmente nos encontramos en fase de validación directa con colegas productores y músicos. Crea tu cuenta,
+            recibe tus <b>1.850 créditos de bienvenida</b> para escanear y componer, y ayúdanos con tu feedback técnico
+            escribiéndonos a <b>{BRAND.supportEmail}</b>.
+          </p>
+          <button
+            className="btn btn--gold"
+            onClick={() => openAuthModal("signup")}
+            style={{ padding: "12px 24px", fontWeight: 700 }}
+          >
+            <UserPlus size={16} /> Crear Cuenta y Comenzar Pruebas
+          </button>
         </div>
       </section>
 

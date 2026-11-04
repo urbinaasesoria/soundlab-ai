@@ -167,3 +167,4 @@ export function WaitlistModal({ open, featureName, onClose }: WaitlistModalProps
     </Modal>
   );
 }
+

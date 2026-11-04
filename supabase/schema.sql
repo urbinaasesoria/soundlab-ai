@@ -173,7 +173,7 @@ CREATE POLICY "Cualquiera puede registrarse en la lista de espera"
 CREATE POLICY "Solo administradores pueden leer la lista de espera"
   ON public.waitlist FOR SELECT
   USING (
-    auth.jwt() ->> 'email' IN ('urbinaasesoriaeinversiones@gmail.com', 'murbinasojo@gmail.com')
+    auth.jwt() ->> 'email' IN ('info@urbinaaei.com', 'urbinaasesoriaeinversiones@gmail.com', 'murbinasojo@gmail.com')
   );
 
 

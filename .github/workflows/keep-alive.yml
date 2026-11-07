@@ -1,0 +1,21 @@
+name: Supabase & App Keep-Alive
+on:
+  schedule:
+    # Ejecutar todos los días a las 08:00 UTC (03:00 hora de Perú)
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    name: Ping Supabase para evitar pausa por inactividad
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        run: |
+          echo "Enviando ping a Supabase..."
+          curl -s -f -H "apikey: sb_publishable_HXL685onWMEo-4shko9J8g_nPVysfUf" "https://pkjunhbuormzdkhbrxfd.supabase.co/rest/v1/" || echo "Supabase respondió o está despertando"
+
+      - name: Ping App Keep-Alive Endpoint
+        run: |
+          echo "Enviando ping a endpoint de Vercel..."
+          curl -s -f "https://soundlab-ai-app.vercel.app/api/keep-alive" || echo "Vercel endpoint ping completado"

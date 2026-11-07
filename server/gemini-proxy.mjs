@@ -630,7 +630,7 @@ async function handleNarrate(req, res) {
 
 /* -------------------------------- servidor ------------------------------ */
 
-export function handleRequest(req, res) {
+export async function handleRequest(req, res) {
   const ip = req.socket?.remoteAddress ?? "local";
 
   if (req.method === "OPTIONS") {
@@ -647,6 +647,29 @@ export function handleRequest(req, res) {
 
   if (req.method === "GET" && (pathname === "/health" || pathname === "/api/health")) {
     return send(req, res, 200, { ok: true, model: MODEL, hasKey: Boolean(API_KEY) });
+  }
+
+  if (req.method === "GET" && (pathname === "/api/keep-alive" || pathname === "/keep-alive")) {
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || "https://pkjunhbuormzdkhbrxfd.supabase.co";
+    const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || "sb_publishable_HXL685onWMEo-4shko9J8g_nPVysfUf";
+    try {
+      const resp = await fetch(`${supabaseUrl}/rest/v1/`, {
+        headers: { apikey: supabaseKey },
+      });
+      return send(req, res, 200, {
+        ok: true,
+        service: "supabase_keepalive",
+        supabaseStatus: resp.status,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (err) {
+      return send(req, res, 200, {
+        ok: false,
+        service: "supabase_keepalive",
+        error: err.message,
+        timestamp: new Date().toISOString(),
+      });
+    }
   }
 
   if (pathname === "/api/webhooks/mercadopago") {

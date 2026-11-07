@@ -653,8 +653,11 @@ export async function handleRequest(req, res) {
     const supabaseUrl = process.env.VITE_SUPABASE_URL || "https://pkjunhbuormzdkhbrxfd.supabase.co";
     const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || "sb_publishable_HXL685onWMEo-4shko9J8g_nPVysfUf";
     try {
-      const resp = await fetch(`${supabaseUrl}/rest/v1/`, {
-        headers: { apikey: supabaseKey },
+      const resp = await fetch(`${supabaseUrl}/rest/v1/profiles?select=count`, {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+        },
       });
       return send(req, res, 200, {
         ok: true,

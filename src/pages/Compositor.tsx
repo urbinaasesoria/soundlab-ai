@@ -8,6 +8,7 @@ import { decodeFile, sliceTrack } from "../lib/audio/decode";
 import {
   buildPack,
   compileSet,
+  calculateDynamicParameters,
   EMPTY_FORM,
   formatPlainText,
   KEY_SCALES,
@@ -49,29 +50,54 @@ export function CompositorPage() {
   const refInput = useRef<HTMLInputElement>(null);
 
   const set = <K extends keyof CompositorForm>(key: K, value: CompositorForm[K]) =>
-    setForm((prev) => ({ ...prev, [key]: value }));
+    setForm((prev) => {
+      const next = { ...prev, [key]: value };
+      if (key !== "weirdness" && key !== "styleInfluence") {
+        const dyn = calculateDynamicParameters(next);
+        next.weirdness = dyn.weirdness;
+        next.styleInfluence = dyn.styleInfluence;
+      }
+      return next;
+    });
 
   const toggleIn = (key: "productionKeywords" | "exclude", value: string) =>
     setForm((prev) => {
       const list = prev[key];
-      return { ...prev, [key]: list.includes(value) ? list.filter((v) => v !== value) : [...list, value] };
+      const nextList = list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
+      const next = { ...prev, [key]: nextList };
+      if (key === "productionKeywords") {
+        const dyn = calculateDynamicParameters(next);
+        next.weirdness = dyn.weirdness;
+        next.styleInfluence = dyn.styleInfluence;
+      }
+      return next;
     });
 
   const applyProfile = (id: CreativeProfile) => {
-    const weirdness = id === "fiel" ? 30 : id === "equilibrado" ? 40 : 55;
-    const styleInfluence = id === "fiel" ? 90 : id === "equilibrado" ? 80 : 62;
-    setForm((prev) => ({ ...prev, profile: id, weirdness, styleInfluence }));
+    setForm((prev) => {
+      const next = { ...prev, profile: id };
+      const dyn = calculateDynamicParameters(next);
+      next.weirdness = dyn.weirdness;
+      next.styleInfluence = dyn.styleInfluence;
+      return next;
+    });
   };
 
-  /** Cambiar de preset restablece BPM y exclusiones a las del género. */
+  /** Cambiar de preset restablece BPM y exclusiones a las del género y recalcula parámetros. */
   const applyPreset = (presetId: string) => {
     const preset = findPreset(presetId);
-    setForm((prev) => ({
-      ...prev,
-      presetId,
-      bpm: prev.bpm || (preset ? String(Math.round((preset.bpmMin + preset.bpmMax) / 2)) : ""),
-      exclude: preset ? preset.defaultExclusions : prev.exclude,
-    }));
+    setForm((prev) => {
+      const next = {
+        ...prev,
+        presetId,
+        bpm: preset ? String(Math.round((preset.bpmMin + preset.bpmMax) / 2)) : prev.bpm,
+        exclude: preset ? preset.defaultExclusions : prev.exclude,
+      };
+      const dyn = calculateDynamicParameters(next);
+      next.weirdness = dyn.weirdness;
+      next.styleInfluence = dyn.styleInfluence;
+      return next;
+    });
   };
 
   /** Analiza una referencia con el motor DSP y deriva decisiones de producción. */
@@ -444,7 +470,7 @@ export function CompositorPage() {
                 </button>
                 <span>
                   Escribe la letra a partir de tu idea y ajusta el style prompt para que encajen. Respeta la estructura
-                  óptima de Suno (v3.5 / v4) y Udio: estribillo de 2–4 líneas, metatags y cierre <code>[End]</code>.
+                  óptima de SUNO 6.0 y Udio: estribillo de 2–4 líneas, metatags y cierre <code>[End]</code>.
                 </span>
               </div>
             )}

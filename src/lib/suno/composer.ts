@@ -87,6 +87,9 @@ export interface ProductionSet {
   checks: PackChecks;
   decisions: Decision[];
   presetName: string;
+  bpm: string;
+  keyScale: string;
+  paramsRationale?: string;
 }
 
 /* ---------------------------- catálogos --------------------------------- */
@@ -231,6 +234,134 @@ const PROFILES: Record<CreativeProfile, { weirdness: number; styleInfluence: num
 
 const firstPreset = SUNO_PRESETS[0];
 
+export interface DynamicParamResult {
+  weirdness: number;
+  styleInfluence: number;
+  rationale: string;
+}
+
+/**
+ * Calcula los parámetros óptimos (Weirdness y Style Influence) de forma dinámica
+ * en función del género (preset), emoción (mood), palabras clave de producción,
+ * perfil creativo y acondicionamiento técnico (SUNO 6.0).
+ */
+export function calculateDynamicParameters(form: {
+  presetId?: string;
+  moodId?: string;
+  productionKeywords?: string[];
+  profile?: CreativeProfile;
+  maxMode?: boolean;
+}): DynamicParamResult {
+  const presetId = form.presetId ?? firstPreset.id;
+  const preset = findPreset(presetId) ?? firstPreset;
+  const group = preset?.group?.toLowerCase() ?? "";
+
+  // Base según la naturaleza armónica y rítmica del género
+  let weirdness = 36;
+  let influence = 82;
+  const reasons: string[] = [];
+
+  if (group.includes("tradicional") || presetId === "vals" || presetId === "bolero" || presetId === "ranchera") {
+    weirdness = 22;
+    influence = 90;
+    reasons.push(`${preset.name}: fidelidad armónica alta y baja dispersión rítmica`);
+  } else if (group.includes("tropical") || presetId.includes("cumbia")) {
+    if (presetId === "cumbia-peruana") {
+      weirdness = 44;
+      influence = 80;
+      reasons.push("Chicha psicodélica: apertura para wah-wah, delays y sintetizador Farfisa");
+    } else {
+      weirdness = 26;
+      influence = 88;
+      reasons.push("Cumbia tropical: base rítmica comercial estricta con timbales sincronizados");
+    }
+  } else if (presetId.includes("rock") || presetId.includes("pop")) {
+    weirdness = 32;
+    influence = 85;
+    reasons.push("Pop-Rock: estructura comercial definida con guitarras al frente");
+  } else if (presetId.includes("jazz") || presetId.includes("blues")) {
+    weirdness = 48;
+    influence = 74;
+    reasons.push("Jazz / Blues: mayor margen de improvisación armónica y modulación");
+  } else if (presetId.includes("cinematic") || presetId.includes("ambient") || presetId.includes("lofi")) {
+    weirdness = 54;
+    influence = 70;
+    reasons.push("Cinemático / Textural: texturas etéreas y apertura sonora envolvente");
+  } else {
+    reasons.push(`${preset.name}: balance dinámico de género`);
+  }
+
+  // Modulación por Mood
+  const mood = form.moodId ?? "dreamy";
+  if (mood === "dreamy" || mood === "ethereal") {
+    weirdness += 8;
+    influence -= 4;
+    reasons.push("Atmósfera onírica (+8 Weirdness, -4 Influence)");
+  } else if (mood === "dark" || mood === "aggressive") {
+    weirdness += 4;
+    influence += 4;
+    reasons.push("Tensión oscura (+4 Influence)");
+  } else if (mood === "intimate" || mood === "melancholic") {
+    weirdness -= 4;
+    influence += 2;
+    reasons.push("Intimidad acústica (-4 Weirdness)");
+  } else if (mood === "uplifting") {
+    weirdness -= 2;
+    influence += 4;
+    reasons.push("Euforia rítmica (+4 Influence)");
+  }
+
+  // Modulación por Etiquetas de Producción
+  const kws = form.productionKeywords ?? [];
+  if (kws.includes("lo-fi texture")) {
+    weirdness += 6;
+    reasons.push("Textura Lo-Fi vintage");
+  }
+  if (kws.includes("cinematic production") || kws.includes("reverb heavy")) {
+    weirdness += 4;
+    influence -= 2;
+  }
+  if (kws.includes("punchy drums") || kws.includes("dry mix") || kws.includes("sidechain compression")) {
+    influence += 4;
+    weirdness -= 4;
+    reasons.push("Pegada rítmica tight");
+  }
+
+  // Modulación por Perfil Creativo
+  const profile = form.profile ?? "equilibrado";
+  if (profile === "fiel") {
+    weirdness -= 6;
+    influence += 8;
+    reasons.push("Perfil fiel (+8 Influence, -6 Weirdness)");
+  } else if (profile === "experimental") {
+    weirdness += 14;
+    influence -= 12;
+    reasons.push("Perfil experimental (+14 Weirdness, -12 Influence)");
+  }
+
+  if (form.maxMode) {
+    influence += 3;
+    reasons.push("Max Mode (+3 Influence)");
+  }
+
+  // Límites recomendados por el manual de SUNO 6.0 (Weirdness 10–75, Influence 50–96)
+  const finalWeirdness = Math.max(12, Math.min(74, Math.round(weirdness)));
+  const finalInfluence = Math.max(55, Math.min(95, Math.round(influence)));
+
+  return {
+    weirdness: finalWeirdness,
+    styleInfluence: finalInfluence,
+    rationale: reasons.join(" · "),
+  };
+}
+
+const defaultInitParams = calculateDynamicParameters({
+  presetId: firstPreset.id,
+  moodId: "dreamy",
+  productionKeywords: [],
+  profile: "equilibrado",
+});
+
 export const EMPTY_FORM: CompositorForm = {
   idea: "",
   language: "es",
@@ -254,8 +385,8 @@ export const EMPTY_FORM: CompositorForm = {
   lyrics: "",
   styleOverride: "",
   profile: "equilibrado",
-  weirdness: 40,
-  styleInfluence: 80,
+  weirdness: defaultInitParams.weirdness,
+  styleInfluence: defaultInitParams.styleInfluence,
 };
 
 /** Formulario inicial derivado de un preset concreto. */
@@ -350,6 +481,14 @@ export function compileSet(form: CompositorForm): ProductionSet {
     ...profile.terms.slice(0, 2),
   ]).join(", ");
   decisions.push({ step: "5 · Técnica", detail: technical });
+
+  const dyn = calculateDynamicParameters(form);
+  const finalWeirdness = typeof form.weirdness === "number" ? form.weirdness : dyn.weirdness;
+  const finalInfluence = typeof form.styleInfluence === "number" ? form.styleInfluence : dyn.styleInfluence;
+  decisions.push({
+    step: "Parámetros SUNO 6.0",
+    detail: `Weirdness ${finalWeirdness} · Style Influence ${finalInfluence} % (${dyn.rationale}) · Variety 0 (Off)`,
+  });
 
   /* ---- Ensamblado sobre el style prompt del preset ---- */
   const parts: string[] = [];
@@ -480,8 +619,11 @@ export function compileSet(form: CompositorForm): ProductionSet {
     stylePrompt,
     excludeStyles,
     lyrics,
-    weirdness: form.weirdness,
-    styleInfluence: form.styleInfluence,
+    weirdness: finalWeirdness,
+    styleInfluence: finalInfluence,
+    bpm: bpmValue,
+    keyScale: form.keyScale || "A minor",
+    paramsRationale: dyn.rationale,
     engineerNotes,
     presetName: preset.name,
     decisions,

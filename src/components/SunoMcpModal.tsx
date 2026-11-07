@@ -8,6 +8,7 @@ import {
   ArrowRight,
   Info,
   Lock,
+  Sliders,
 } from "lucide-react";
 import { Modal } from "./Modal";
 import type { ProductionSet } from "../lib/suno/composer";
@@ -155,7 +156,7 @@ export function SunoMcpModal({ open, onClose, set }: SunoMcpModalProps) {
               PARÁMETROS GENERADOS EN SOUNDLAB (COPIAR DIRECTO)
             </span>
             <span className="chip chip--emerald" style={{ fontSize: 11 }}>
-              Optimizado para Suno v4 / v3.5
+              Optimizado para SUNO 6.0
             </span>
           </div>
 
@@ -241,6 +242,201 @@ export function SunoMcpModal({ open, onClose, set }: SunoMcpModalProps) {
                 </button>
               </div>
             )}
+
+            {/* Parámetros Técnicos Adaptativos SUNO 6.0 */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+                background: "var(--color-surface)",
+                padding: "12px 14px",
+                borderRadius: "var(--radius-sm)",
+                border: "1px solid rgba(212, 175, 55, 0.25)",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: 6,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <Sliders size={13} className="gold" />
+                  <span className="mono" style={{ fontSize: 11, color: "var(--color-gold)", fontWeight: 700 }}>
+                    PARÁMETROS ADAPTATIVOS SUNO 6.0:
+                  </span>
+                </div>
+                <button
+                  className="btn btn--ghost btn--sm"
+                  onClick={() =>
+                    copyToClipboard(
+                      `Weirdness: ${set.weirdness} | Style Influence: ${set.styleInfluence}% | BPM: ${set.bpm} | Tonalidad: ${set.keyScale} | Variety: 0`,
+                      "Todos los Parámetros",
+                    )
+                  }
+                >
+                  {copiedField === "Todos los Parámetros" ? (
+                    <Check size={13} className="emerald" />
+                  ) : (
+                    <Copy size={13} />
+                  )}
+                  {copiedField === "Todos los Parámetros" ? "Copiados" : "Copiar todos los parámetros"}
+                </button>
+              </div>
+
+              {/* Chips de parámetros individuales */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(115px, 1fr))",
+                  gap: 8,
+                  marginTop: 4,
+                }}
+              >
+                {/* Weirdness */}
+                <div
+                  style={{
+                    background: "rgba(255, 255, 255, 0.03)",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: "var(--radius-sm)",
+                    padding: "6px 10px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <div>
+                    <span style={{ fontSize: 10, color: "var(--color-muted)", display: "block" }}>WEIRDNESS</span>
+                    <span className="mono" style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text)" }}>
+                      {set.weirdness}
+                    </span>
+                  </div>
+                  <button
+                    className="btn btn--ghost btn--sm"
+                    style={{ padding: "2px 6px" }}
+                    onClick={() => copyToClipboard(String(set.weirdness), "Weirdness")}
+                    title="Copiar Weirdness"
+                  >
+                    {copiedField === "Weirdness" ? <Check size={11} className="emerald" /> : <Copy size={11} />}
+                  </button>
+                </div>
+
+                {/* Style Influence */}
+                <div
+                  style={{
+                    background: "rgba(255, 255, 255, 0.03)",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: "var(--radius-sm)",
+                    padding: "6px 10px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <div>
+                    <span style={{ fontSize: 10, color: "var(--color-muted)", display: "block" }}>INFLUENCE</span>
+                    <span className="mono" style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text)" }}>
+                      {set.styleInfluence}%
+                    </span>
+                  </div>
+                  <button
+                    className="btn btn--ghost btn--sm"
+                    style={{ padding: "2px 6px" }}
+                    onClick={() => copyToClipboard(`${set.styleInfluence}%`, "Influence")}
+                    title="Copiar Style Influence"
+                  >
+                    {copiedField === "Influence" ? <Check size={11} className="emerald" /> : <Copy size={11} />}
+                  </button>
+                </div>
+
+                {/* Tempo BPM */}
+                <div
+                  style={{
+                    background: "rgba(255, 255, 255, 0.03)",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: "var(--radius-sm)",
+                    padding: "6px 10px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <div>
+                    <span style={{ fontSize: 10, color: "var(--color-muted)", display: "block" }}>TEMPO</span>
+                    <span className="mono" style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text)" }}>
+                      {set.bpm} BPM
+                    </span>
+                  </div>
+                  <button
+                    className="btn btn--ghost btn--sm"
+                    style={{ padding: "2px 6px" }}
+                    onClick={() => copyToClipboard(set.bpm, "BPM")}
+                    title="Copiar BPM"
+                  >
+                    {copiedField === "BPM" ? <Check size={11} className="emerald" /> : <Copy size={11} />}
+                  </button>
+                </div>
+
+                {/* Tonalidad */}
+                <div
+                  style={{
+                    background: "rgba(255, 255, 255, 0.03)",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: "var(--radius-sm)",
+                    padding: "6px 10px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <div>
+                    <span style={{ fontSize: 10, color: "var(--color-muted)", display: "block" }}>TONALIDAD</span>
+                    <span className="mono" style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text)" }}>
+                      {set.keyScale}
+                    </span>
+                  </div>
+                  <button
+                    className="btn btn--ghost btn--sm"
+                    style={{ padding: "2px 6px" }}
+                    onClick={() => copyToClipboard(set.keyScale, "Tonalidad")}
+                    title="Copiar Tonalidad"
+                  >
+                    {copiedField === "Tonalidad" ? <Check size={11} className="emerald" /> : <Copy size={11} />}
+                  </button>
+                </div>
+
+                {/* Variety */}
+                <div
+                  style={{
+                    background: "rgba(255, 255, 255, 0.03)",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: "var(--radius-sm)",
+                    padding: "6px 10px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <div>
+                    <span style={{ fontSize: 10, color: "var(--color-muted)", display: "block" }}>VARIETY</span>
+                    <span className="mono" style={{ fontSize: 13, fontWeight: 700, color: "var(--color-emerald)" }}>
+                      0 (Off)
+                    </span>
+                  </div>
+                  <span style={{ fontSize: 10, color: "var(--color-muted)" }}>Fidelidad</span>
+                </div>
+              </div>
+
+              {set.paramsRationale && (
+                <div style={{ fontSize: 11, color: "var(--color-muted)", marginTop: 2, lineHeight: 1.4 }}>
+                  💡 <b>Calibración adaptativa según condiciones:</b> {set.paramsRationale}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

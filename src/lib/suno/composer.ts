@@ -138,25 +138,30 @@ export const MUSICAL_MODES = [
   { value: "Locrian mode", label: "Locrio (tensión extrema)" },
 ] as const;
 
-export const VOCAL_TECHNIQUES = [
-  "breathy, airy delivery",
-  "powerful belting",
-  "raspy, textured tone",
-  "falsetto with soft head voice",
-  "spoken-word intimacy",
-  "layered harmonies",
-  "chopped and pitched",
-  "clean and forward",
+export interface KeywordOption {
+  readonly value: string;
+  readonly label: string;
+}
+
+export const VOCAL_TECHNIQUES: readonly KeywordOption[] = [
+  { value: "breathy, airy delivery", label: "Voz aireada y suave (Breathy)" },
+  { value: "powerful belting", label: "Belting potente con proyección" },
+  { value: "raspy, textured tone", label: "Tono rasgado y texturizado (Raspy)" },
+  { value: "falsetto with soft head voice", label: "Falsete y voz de cabeza suave" },
+  { value: "spoken-word intimacy", label: "Hablado íntimo (Spoken Word)" },
+  { value: "layered harmonies", label: "Armonías en capas (Harmonies)" },
+  { value: "chopped and pitched", label: "Vocal chops y pitched" },
+  { value: "clean and forward", label: "Limpia y al frente (Clean)" },
 ] as const;
 
-export const VOCAL_ATTITUDES = [
-  "confident",
-  "vulnerable",
-  "aggressive",
-  "dreamy",
-  "detached",
-  "playful",
-  "solemn",
+export const VOCAL_ATTITUDES: readonly KeywordOption[] = [
+  { value: "confident", label: "Segura y con confianza" },
+  { value: "vulnerable", label: "Vulnerable y sensible" },
+  { value: "aggressive", label: "Agresiva y con fuerza" },
+  { value: "dreamy", label: "Soñadora y etérea" },
+  { value: "detached", label: "Distante y reflexiva" },
+  { value: "playful", label: "Juguetona y alegre" },
+  { value: "solemn", label: "Solemne y profunda" },
 ] as const;
 
 /** Idiomas admitidos para la letra. Los metatags siguen en inglés. */
@@ -176,18 +181,18 @@ export const LYRIC_POVS = [
   { value: "colectivo", label: "Colectivo (nosotros)" },
 ] as const;
 
-export const PRODUCTION_KEYWORDS = [
-  "punchy drums",
-  "dry mix",
-  "reverb heavy",
-  "sidechain compression",
-  "tape saturation",
-  "wide stereo image",
-  "cinematic production",
-  "lo-fi texture",
-  "gated reverb",
-  "analog warmth",
-  "acoustic instruments",
+export const PRODUCTION_KEYWORDS: readonly KeywordOption[] = [
+  { value: "punchy drums", label: "Batería con pegada (Punchy)" },
+  { value: "dry mix", label: "Mezcla seca y directa" },
+  { value: "reverb heavy", label: "Reverb amplia y profunda" },
+  { value: "sidechain compression", label: "Compresión sidechain (bombeo)" },
+  { value: "tape saturation", label: "Saturación de cinta analógica" },
+  { value: "wide stereo image", label: "Imagen estéreo amplia" },
+  { value: "cinematic production", label: "Producción cinematográfica" },
+  { value: "lo-fi texture", label: "Textura Lo-Fi y vintage" },
+  { value: "gated reverb", label: "Reverb con compuerta (Gated)" },
+  { value: "analog warmth", label: "Calidez armónica analógica" },
+  { value: "acoustic instruments", label: "Instrumentos acústicos orgánicos" },
 ] as const;
 
 export const EXCLUSIONS = [

@@ -628,6 +628,53 @@ async function handleNarrate(req, res) {
   }
 }
 
+async function handleSunoMcp(req, res) {
+  let payload;
+  try {
+    payload = await parseBody(req);
+  } catch (err) {
+    return send(req, res, err?.status || 400, { error: err?.message || "JSON inválido" });
+  }
+
+  const authHeader =
+    req.headers.authorization ||
+    (req.headers["x-suno-key"] ? `Bearer ${req.headers["x-suno-key"]}` : "");
+
+  if (!authHeader) {
+    return send(req, res, 401, {
+      error: "Falta tu clave de API o token de Suno (Authorization o x-suno-key)",
+    });
+  }
+
+  try {
+    const upstreamResp = await fetch("https://api.suno.com/mcp", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: authHeader,
+        "user-agent": "SoundLab-AI/2.1",
+      },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(30_000),
+    });
+
+    const responseText = await upstreamResp.text();
+    let responseJson;
+    try {
+      responseJson = JSON.parse(responseText);
+    } catch {
+      responseJson = { raw: responseText };
+    }
+
+    return send(req, res, upstreamResp.status, responseJson);
+  } catch (err) {
+    console.error("[proxy] error reenviando a Suno MCP:", err?.message || "error");
+    return send(req, res, 502, {
+      error: `No se pudo conectar con Suno MCP: ${err?.message || "error"}`,
+    });
+  }
+}
+
 /* -------------------------------- servidor ------------------------------ */
 
 export async function handleRequest(req, res) {
@@ -636,7 +683,7 @@ export async function handleRequest(req, res) {
   if (req.method === "OPTIONS") {
     res.writeHead(204, {
       ...corsFor(req),
-      "access-control-allow-headers": "content-type",
+      "access-control-allow-headers": "content-type, authorization, x-suno-key",
       "access-control-allow-methods": "POST, GET, OPTIONS",
       "access-control-max-age": "600",
     });
@@ -681,6 +728,13 @@ export async function handleRequest(req, res) {
 
   if (pathname === "/api/orders/yape") {
     return send(req, res, 200, { ok: true, message: "Orden Yape registrada" });
+  }
+
+  if (pathname === "/api/suno-mcp") {
+    if (req.method === "POST") {
+      return void handleSunoMcp(req, res);
+    }
+    return send(req, res, 405, { error: "Usa método POST para consultar Suno MCP" });
   }
 
   if (req.method !== "POST" || !["/api/suggest", "/api/compose", "/api/narrate"].includes(pathname)) {

@@ -28,6 +28,7 @@ import { PRESET_GROUPS, SUNO_PRESETS, findPreset } from "../lib/suno/presets";
 import { deriveFromAnalysis, type ReferenceDerivation } from "../lib/suno/fromAnalysis";
 import { aiConfigured, composeSet, improveSet } from "../lib/ai/client";
 import { SUNO_LIMITS } from "../lib/suno/limits";
+import { SunoMcpModal } from "../components/SunoMcpModal";
 
 const PROFILES: { id: CreativeProfile; label: string; hint: string }[] = [
   { id: "fiel", label: "Fiel", hint: "Obedece al prompt. Weirdness 12 · Influencia 92" },
@@ -40,6 +41,7 @@ export function CompositorPage() {
   const [form, setForm] = useState<CompositorForm>(EMPTY_FORM);
   const [reference, setReference] = useState<ReferenceDerivation | null>(null);
   const [refBusy, setRefBusy] = useState("");
+  const [mcpModalOpen, setMcpModalOpen] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
   const [aiNote, setAiNote] = useState<{ kind: "ok" | "err"; text: string; rationale?: string[] } | null>(null);
   const [aiSnapshot, setAiSnapshot] = useState<{ lyrics: string; styleOverride: string } | null>(null);
@@ -245,7 +247,10 @@ export function CompositorPage() {
           <Link to="/suno" className="btn btn--ghost btn--sm">
             <ArrowLeft size={13} /> Catálogo
           </Link>
-          <button className="btn btn--gold btn--sm" onClick={exportPack}>
+          <button className="btn btn--gold btn--sm" onClick={() => setMcpModalOpen(true)}>
+            <Sparkles size={13} /> Generar en SUNO (1-Click MCP)
+          </button>
+          <button className="btn btn--soft btn--sm" onClick={exportPack}>
             <Download size={13} /> Exportar pack
           </button>
         </div>
@@ -539,11 +544,11 @@ export function CompositorPage() {
               <div className="composer-chips">
                 {PRODUCTION_KEYWORDS.map((k) => (
                   <button
-                    key={k}
-                    className={`pill ${form.productionKeywords.includes(k) ? "pill--active" : ""}`}
-                    onClick={() => toggleIn("productionKeywords", k)}
+                    key={k.value}
+                    className={`pill ${form.productionKeywords.includes(k.value) ? "pill--active" : ""}`}
+                    onClick={() => toggleIn("productionKeywords", k.value)}
                   >
-                    {k}
+                    {k.label}
                   </button>
                 ))}
               </div>
@@ -568,7 +573,7 @@ export function CompositorPage() {
               </div>
               <div className="field">
                 <label className="label" htmlFor="c-vt">
-                  Técnica
+                  Técnica vocal
                 </label>
                 <select
                   id="c-vt"
@@ -578,15 +583,15 @@ export function CompositorPage() {
                 >
                   <option value="">Sin definir</option>
                   {VOCAL_TECHNIQUES.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
+                    <option key={t.value} value={t.value}>
+                      {t.label}
                     </option>
                   ))}
                 </select>
               </div>
               <div className="field">
                 <label className="label" htmlFor="c-va">
-                  Actitud
+                  Aptitud / Actitud vocal
                 </label>
                 <select
                   id="c-va"
@@ -596,8 +601,8 @@ export function CompositorPage() {
                 >
                   <option value="">Sin definir</option>
                   {VOCAL_ATTITUDES.map((a) => (
-                    <option key={a} value={a}>
-                      {a}
+                    <option key={a.value} value={a.value}>
+                      {a.label}
                     </option>
                   ))}
                 </select>
@@ -842,6 +847,13 @@ export function CompositorPage() {
             )}
 
             <div className="composer-out__actions">
+              <button
+                className="btn btn--gold"
+                style={{ gridColumn: "1 / -1", justifyContent: "center", padding: "11px 16px", fontWeight: 600 }}
+                onClick={() => setMcpModalOpen(true)}
+              >
+                <Sparkles size={15} /> Generar en mi SUNO (1-Click MCP)
+              </button>
               <button className="btn btn--primary" onClick={exportPack}>
                 <Download size={14} /> Exportar .sunopack.json
               </button>
@@ -911,6 +923,8 @@ export function CompositorPage() {
           </div>
         </aside>
       </div>
+
+      <SunoMcpModal open={mcpModalOpen} onClose={() => setMcpModalOpen(false)} set={result} />
     </div>
   );
 }

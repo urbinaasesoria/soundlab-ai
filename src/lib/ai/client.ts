@@ -17,6 +17,7 @@ const PROXY = RAW_PROXY !== undefined ? RAW_PROXY : (import.meta.env.PROD ? "" :
 
 export interface AiSuggestion {
   stylePrompt: string;
+  styleNuance?: string;
   excludeStyles?: string;
   lyricsNotes?: string;
   rationale: string[];
@@ -122,6 +123,9 @@ export interface AiComposeSuggestion extends AiSuggestion {
   title?: string;
   lyrics: string;
   lyricsNotes?: string;
+  suggestedMoodId?: string;
+  suggestedKeyScale?: string;
+  suggestedBpm?: number;
 }
 
 export interface AiComposeResult {
@@ -132,19 +136,33 @@ export interface AiComposeResult {
 }
 
 /**
- * Pide a la IA el set completo: estilo, exclusiones y letra original alineada
- * con el género, el BPM, la tonalidad y la emoción. Es lo que se usa cuando el
- * usuario solo aporta una idea o un verso.
+ * Pide a la IA el set completo tomando en cuenta todos los parámetros de producción:
+ * estilo, matiz reactivo, exclusiones, dirección emocional, tonalidad y letra
+ * (creada desde cero, mejorada u optimizada, o estructurada respetando la letra intacta).
  */
 export async function composeSet(input: {
   idea: string;
   preset: string;
+  customGenre?: string;
   set: string;
   stylePrompt: string;
   bpm: string;
   keyScale: string;
+  musicalMode?: string;
   mood: string;
+  moodAuto?: boolean;
+  keyAuto?: boolean;
+  cinematic?: string;
   vocal: string;
+  productionKeywords?: string[];
+  excludeStyles?: string;
+  profile?: string;
+  weirdness?: number;
+  styleInfluence?: number;
+  maxMode?: boolean;
+  vocalEntryHack?: boolean;
+  instrumentalBridge?: boolean;
+  keepLyrics?: boolean;
   language?: string;
   /** Punto de vista narrativo (primera, segunda, tercera, observador, colectivo). */
   pov?: string;
@@ -153,7 +171,7 @@ export async function composeSet(input: {
   variant?: number;
   /** Letra de una versión anterior que NO debe repetirse. */
   avoid?: string;
-  mode?: "create" | "rewrite";
+  mode?: "create" | "rewrite" | "keep";
 }): Promise<AiComposeResult> {
   if (typeof PROXY !== "string") return { available: false, ok: false, error: "IA no configurada" };
 
@@ -182,5 +200,43 @@ export async function composeSet(input: {
   } catch (error) {
     const message = error instanceof Error ? error.message : "error de red";
     return { available: true, ok: false, error: message };
+  }
+}
+
+export interface AiReferenceRefinement {
+  presetId: string;
+  bpm?: number;
+  keyScale?: string;
+  moodId: string;
+  vocalGender?: "" | "female" | "male" | "duet" | "instrumental";
+  vocalTechnique?: string;
+  vocalAttitude?: string;
+  productionKeywords?: string[];
+  rationale: string[];
+  model?: string;
+}
+
+/**
+ * Envía únicamente la telemetría numérica DSP (jamás audio) al musicólogo IA
+ * para validar o afinar la clasificación de género, emoción y perfil vocal.
+ */
+export async function refineReferenceWithAi(
+  telemetry: Record<string, unknown>,
+): Promise<{ ok: boolean; data?: AiReferenceRefinement }> {
+  if (typeof PROXY !== "string") return { ok: false };
+
+  try {
+    const response = await fetch(`${PROXY}/api/analyze-ref`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ telemetry }),
+      signal: AbortSignal.timeout(25_000),
+    });
+    if (!response.ok) return { ok: false };
+    const data = (await response.json()) as AiReferenceRefinement;
+    if (!data?.presetId) return { ok: false };
+    return { ok: true, data };
+  } catch {
+    return { ok: false };
   }
 }

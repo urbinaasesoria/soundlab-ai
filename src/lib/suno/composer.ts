@@ -52,7 +52,7 @@ export interface CompositorForm {
   instrumentalBridge: boolean;
   keepLyrics: boolean;
   lyrics: string;
-  /** Style prompt final escrito por una IA o a mano; si existe, manda sobre el ensamblado. */
+  /** Matiz estilístico adicional generado por la IA o escrito a mano; se integra dinámicamente al set. */
   styleOverride: string;
   profile: CreativeProfile;
   weirdness: number;
@@ -89,23 +89,97 @@ export interface ProductionSet {
   presetName: string;
   bpm: string;
   keyScale: string;
+  effectiveMoodId?: string;
   paramsRationale?: string;
 }
 
 /* ---------------------------- catálogos --------------------------------- */
 
-export const MOODS = [
-  { id: "dreamy", es: "Onírico", en: "dreamy, hazy and floating" },
-  { id: "dark", es: "Oscuro y denso", en: "dark, brooding and heavy" },
-  { id: "uplifting", es: "Eufórico", en: "uplifting and euphoric" },
-  { id: "nostalgic", es: "Nostálgico", en: "nostalgic and bittersweet" },
-  { id: "aggressive", es: "Agresivo", en: "aggressive and confrontational" },
-  { id: "ethereal", es: "Etéreo", en: "ethereal and weightless" },
-  { id: "intimate", es: "Íntimo", en: "intimate and close-miked" },
-  { id: "melancholic", es: "Melancólico", en: "melancholic and restrained" },
+export interface MoodDefinition {
+  readonly id: string;
+  readonly es: string;
+  readonly en: string;
+  readonly description: string;
+  readonly reference: string;
+}
+
+export const MOODS: readonly MoodDefinition[] = [
+  {
+    id: "auto",
+    es: "✨ Elegido por la IA",
+    en: "",
+    description:
+      "El motor y la IA analizan la historia, la letra, el género y el tempo para determinar automáticamente la dirección emocional más coherente.",
+    reference: "Adaptación inteligente según la temática y el subgénero elegido",
+  },
+  {
+    id: "dreamy",
+    es: "Onírico",
+    en: "dreamy, hazy and floating",
+    description:
+      "Atmósfera flotante, hipnótica y envolvente con colas de reverb largas, acordes suspendidos y transientes suaves que evocan un sueño.",
+    reference: "Refs: Beach House («Space Song»), Gustavo Cerati («Bocanada»), Mazzy Star («Fade Into You»)",
+  },
+  {
+    id: "dark",
+    es: "Oscuro y denso",
+    en: "dark, brooding and heavy",
+    description:
+      "Tensión grave, subgraves profundos, armónicos sombríos y espacialidad nocturna e introspectiva con peso dramático.",
+    reference: "Refs: The Weeknd («After Hours»), Massive Attack («Teardrop»), Depeche Mode («Enjoy the Silence»)",
+  },
+  {
+    id: "uplifting",
+    es: "Eufórico",
+    en: "uplifting and euphoric",
+    description:
+      "Energía luminosa, progresiones ascendentes, brillo en agudos y percusión contagiosa que impulsa hacia un estribillo expansivo y festivo.",
+    reference: "Refs: Coldplay («Viva La Vida»), Grupo 5 («El Ritmo de Mi Corazón»), Dua Lipa («Levitating»)",
+  },
+  {
+    id: "nostalgic",
+    es: "Nostálgico",
+    en: "nostalgic and bittersweet",
+    description:
+      "Calidez agridulce con saturación de cinta analógica, cadencias de añoranza y melodías que combinan recuerdo cálido con melancolía sutil.",
+    reference: "Refs: Soda Stereo («De Música Ligera»), Natalia Lafourcade («Hasta la Raíz»), Los Ángeles Negros",
+  },
+  {
+    id: "aggressive",
+    es: "Agresivo",
+    en: "aggressive and confrontational",
+    description:
+      "Ataque frontal, compresión intensa, distorsión armónica marcada y articulación rítmica contundente sin concesiones.",
+    reference: "Refs: Rage Against the Machine («Killing in the Name»), Rosalía («SAOKO»), Linkin Park («Faint»)",
+  },
+  {
+    id: "ethereal",
+    es: "Etéreo",
+    en: "ethereal and weightless",
+    description:
+      "Textura cristalina e ingrávida, registro agudo aireado, pads celestiales y mínima densidad percusiva que parece flotar en el aire.",
+    reference: "Refs: Cocteau Twins, Enya («Orinoco Flow»), Sigur Rós («Hoppípolla»)",
+  },
+  {
+    id: "intimate",
+    es: "Íntimo",
+    en: "intimate and close-miked",
+    description:
+      "Grabación cercana al micrófono (close-miked), dinámica contenida, respiración audible y cercanía acústica de confesión en sala pequeña.",
+    reference: "Refs: Billie Eilish («when the party's over»), Silvio Rodríguez («Óleo de una mujer con sombrero»), Chabuca Granda",
+  },
+  {
+    id: "melancholic",
+    es: "Melancólico",
+    en: "melancholic and restrained",
+    description:
+      "Dolor contenido, armonías en tonalidad menor, tempo pausado y fraseo expresivo cargado de desgarro contenido y reflexión.",
+    reference: "Refs: Adele («Someone Like You»),José José («El Triste»), Radiohead («No Surprises»)",
+  },
 ] as const;
 
 export const KEY_SCALES = [
+  { value: "", label: "Sin definir (La IA la determina)" },
   { value: "C minor", label: "C menor (oscuro)" },
   { value: "C# minor", label: "C# menor" },
   { value: "D minor", label: "D menor (serio)" },
@@ -117,7 +191,7 @@ export const KEY_SCALES = [
   { value: "G# minor", label: "G# menor" },
   { value: "A minor", label: "A menor (melancólico)" },
   { value: "A# minor", label: "A# menor" },
-  { value: "B minor", label: "B menor" },
+  { value: "B minor", label: "B minor" },
   { value: "C major", label: "C mayor" },
   { value: "C# major", label: "C# mayor" },
   { value: "D major", label: "D mayor (eufórico)" },
@@ -234,6 +308,117 @@ const PROFILES: Record<CreativeProfile, { weirdness: number; styleInfluence: num
 
 const firstPreset = SUNO_PRESETS[0];
 
+/**
+ * Infiere la emoción (mood) más coherente cuando el usuario elige "auto" ("Elegido por la IA")
+ * analizando el texto de la idea/letra, actitud vocal y preset de género.
+ */
+export function resolveEffectiveMood(form: {
+  moodId?: string;
+  idea?: string;
+  lyrics?: string;
+  cinematic?: string;
+  presetId?: string;
+  vocalAttitude?: string;
+}): MoodDefinition {
+  if (form.moodId && form.moodId !== "auto") {
+    const found = MOODS.find((m) => m.id === form.moodId);
+    if (found) return found;
+  }
+
+  const text = `${form.idea ?? ""} ${form.lyrics ?? ""} ${form.cinematic ?? ""}`.toLowerCase();
+  const presetId = form.presetId ?? firstPreset.id;
+
+  if (/(furia|rabia|guerra|fuego|romper|grito|pelea|odio|destruir|rebeld|caos)/i.test(text) || form.vocalAttitude === "aggressive") {
+    return MOODS.find((m) => m.id === "aggressive")!;
+  }
+  if (/(noche|sombra|oscur|abismo|miedo|oculto|silencio|frio|frío|veneno|secreto)/i.test(text) || presetId === "trap-oscuro") {
+    return MOODS.find((m) => m.id === "dark")!;
+  }
+  if (/(llorar|lágrima|lagrima|adiós|adios|despedida|soledad|dolor|triste|olvido|ausencia|herida)/i.test(text)) {
+    return MOODS.find((m) => m.id === "melancholic")!;
+  }
+  if (/(recuerdo|ayer|infancia|antes|volver|tiempo|memoria|viejo|aquel|nostalgia)/i.test(text)) {
+    return MOODS.find((m) => m.id === "nostalgic")!;
+  }
+  if (/(fiesta|bailar|celebrar|sol|brillar|alegr|gozar|carnaval|arriba|victoria)/i.test(text) || form.vocalAttitude === "playful") {
+    return MOODS.find((m) => m.id === "uplifting")!;
+  }
+  if (/(susurro|cerca|piel|habitación|habitacion|cama|confesión|confesion|secreto|calma)/i.test(text) || form.vocalAttitude === "vulnerable") {
+    return MOODS.find((m) => m.id === "intimate")!;
+  }
+  if (/(cielo|ángel|angel|cosmos|estrella|vuelo|luz|etére|etere|nube)/i.test(text)) {
+    return MOODS.find((m) => m.id === "ethereal")!;
+  }
+
+  // Fallback según naturaleza del género
+  if (presetId.includes("cumbia-nortena") || presetId === "salsa-clasica" || presetId === "merengue" || presetId === "caporales" || presetId === "festejo") {
+    return MOODS.find((m) => m.id === "uplifting")!;
+  }
+  if (presetId === "bolero-nocturno" || presetId === "vals-criollo" || presetId === "balada-pop") {
+    return MOODS.find((m) => m.id === "nostalgic")!;
+  }
+  if (presetId === "huayno-andino" || presetId === "cumbia-surena") {
+    return MOODS.find((m) => m.id === "melancholic")!;
+  }
+  if (presetId === "rock-alternativo") {
+    return MOODS.find((m) => m.id === "dark")!;
+  }
+  if (presetId === "bossa-jazz") {
+    return MOODS.find((m) => m.id === "intimate")!;
+  }
+
+  return MOODS.find((m) => m.id === "dreamy")!;
+}
+
+/**
+ * Determina la tonalidad óptima cuando el usuario deja "Sin definir" (""),
+ * combinando el subgénero, la dirección emocional y el registro vocal.
+ */
+export function inferDefaultKey(form: {
+  keyScale?: string;
+  presetId?: string;
+  moodId?: string;
+  vocalGender?: VocalGender;
+  idea?: string;
+  lyrics?: string;
+}): { keyScale: string; autoSelected: boolean } {
+  if (form.keyScale && form.keyScale.trim()) {
+    return { keyScale: form.keyScale.trim(), autoSelected: false };
+  }
+
+  const effectiveMood = resolveEffectiveMood(form);
+  const presetId = form.presetId ?? firstPreset.id;
+  const isFemale = form.vocalGender === "female";
+
+  if (effectiveMood.id === "uplifting") {
+    if (presetId.includes("cumbia") || presetId === "salsa-clasica" || presetId === "merengue") {
+      return { keyScale: isFemale ? "D major" : "C major", autoSelected: true };
+    }
+    return { keyScale: isFemale ? "G major" : "D major", autoSelected: true };
+  }
+  if (effectiveMood.id === "dark" || effectiveMood.id === "aggressive") {
+    if (presetId === "trap-oscuro" || presetId === "reggaeton-perreo") {
+      return { keyScale: "C minor", autoSelected: true };
+    }
+    return { keyScale: isFemale ? "F# minor" : "D minor", autoSelected: true };
+  }
+  if (effectiveMood.id === "intimate") {
+    if (presetId === "bossa-jazz" || presetId === "bolero-nocturno") {
+      return { keyScale: isFemale ? "F major" : "D minor", autoSelected: true };
+    }
+    return { keyScale: isFemale ? "E minor" : "A minor", autoSelected: true };
+  }
+  if (effectiveMood.id === "nostalgic" || effectiveMood.id === "melancholic") {
+    if (presetId === "vals-criollo" || presetId === "bolero-nocturno") {
+      return { keyScale: "D minor", autoSelected: true };
+    }
+    return { keyScale: isFemale ? "B minor" : "A minor", autoSelected: true };
+  }
+
+  // Dreamy / Ethereal
+  return { keyScale: isFemale ? "E minor" : "A minor", autoSelected: true };
+}
+
 export interface DynamicParamResult {
   weirdness: number;
   styleInfluence: number;
@@ -251,6 +436,8 @@ export function calculateDynamicParameters(form: {
   productionKeywords?: string[];
   profile?: CreativeProfile;
   maxMode?: boolean;
+  idea?: string;
+  lyrics?: string;
 }): DynamicParamResult {
   const presetId = form.presetId ?? firstPreset.id;
   const preset = findPreset(presetId) ?? firstPreset;
@@ -261,7 +448,7 @@ export function calculateDynamicParameters(form: {
   let influence = 82;
   const reasons: string[] = [];
 
-  if (group.includes("tradicional") || presetId === "vals" || presetId === "bolero" || presetId === "ranchera") {
+  if (group.includes("tradicional") || presetId.includes("vals") || presetId.includes("bolero") || presetId.includes("ranchera")) {
     weirdness = 22;
     influence = 90;
     reasons.push(`${preset.name}: fidelidad armónica alta y baja dispersión rítmica`);
@@ -279,10 +466,10 @@ export function calculateDynamicParameters(form: {
     weirdness = 32;
     influence = 85;
     reasons.push("Pop-Rock: estructura comercial definida con guitarras al frente");
-  } else if (presetId.includes("jazz") || presetId.includes("blues")) {
+  } else if (presetId.includes("jazz") || presetId.includes("blues") || presetId.includes("bossa")) {
     weirdness = 48;
     influence = 74;
-    reasons.push("Jazz / Blues: mayor margen de improvisación armónica y modulación");
+    reasons.push("Jazz / Bossa: mayor margen de improvisación armónica y modulación");
   } else if (presetId.includes("cinematic") || presetId.includes("ambient") || presetId.includes("lofi")) {
     weirdness = 54;
     influence = 70;
@@ -291,8 +478,9 @@ export function calculateDynamicParameters(form: {
     reasons.push(`${preset.name}: balance dinámico de género`);
   }
 
-  // Modulación por Mood
-  const mood = form.moodId ?? "dreamy";
+  // Modulación por Mood (incluyendo resolución automática si está en 'auto')
+  const effectiveMood = resolveEffectiveMood(form);
+  const mood = effectiveMood.id;
   if (mood === "dreamy" || mood === "ethereal") {
     weirdness += 8;
     influence -= 4;
@@ -344,7 +532,7 @@ export function calculateDynamicParameters(form: {
     reasons.push("Max Mode (+3 Influence)");
   }
 
-  // Límites recomendados por el manual de SUNO 6.0 (Weirdness 10–75, Influence 50–96)
+  // Límites recomendados por el manual de SUNO 6.0 (Weirdness 12–74, Influence 55–95)
   const finalWeirdness = Math.max(12, Math.min(74, Math.round(weirdness)));
   const finalInfluence = Math.max(55, Math.min(95, Math.round(influence)));
 
@@ -357,7 +545,7 @@ export function calculateDynamicParameters(form: {
 
 const defaultInitParams = calculateDynamicParameters({
   presetId: firstPreset.id,
-  moodId: "dreamy",
+  moodId: "auto",
   productionKeywords: [],
   profile: "equilibrado",
 });
@@ -369,9 +557,9 @@ export const EMPTY_FORM: CompositorForm = {
   presetId: firstPreset.id,
   customGenre: "",
   bpm: "",
-  keyScale: "A minor",
+  keyScale: "",
   musicalMode: "",
-  moodId: "dreamy",
+  moodId: "auto",
   cinematic: "",
   vocalGender: "",
   vocalTechnique: "",
@@ -422,9 +610,44 @@ function fitParts(parts: string[], limit: number): string {
 
 const hasTerm = (text: string, term: string) => text.toLowerCase().includes(term.toLowerCase());
 
+/**
+ * Limpia el matiz estilístico de la IA (`styleOverride`) eliminando tokens de BPM,
+ * tonalidad, modo, bloques Max Mode, voz o frases idénticas al preset para que
+ * cuando el usuario cambie cualquier parámetro en el formulario el `stylePrompt`
+ * se actualice en tiempo real sin quedar congelado.
+ */
+function extractReactiveNuance(rawOverride: string, currentParts: string[]): string {
+  if (!rawOverride.trim()) return "";
+  const existingLower = currentParts.join(", ").toLowerCase();
+
+  const segments = rawOverride
+    .replace(/\[[^\]]+\]/g, "") // quita bloques [is_mode_max], etc.
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const filtered = segments.filter((seg) => {
+    const lower = seg.toLowerCase();
+    if (/\b\d{2,3}\s*bpm\b/i.test(lower)) return false;
+    if (/^[a-g](#|b)?\s+(major|minor)$/i.test(lower)) return false;
+    if (/\b(dorian|phrygian|lydian|mixolydian|locrian)\s+mode\b/i.test(lower)) return false;
+    if (/\b(female|male|duet)\s+vocals\b/i.test(lower)) return false;
+    if (/\binstrumental,\s*no vocals\b/i.test(lower)) return false;
+    // Evita duplicar cláusulas que ya están en las partes activas del formulario
+    if (existingLower.includes(lower)) return false;
+    // Evita repetir cláusulas de otros moods si el usuario acaba de cambiar el mood
+    for (const m of MOODS) {
+      if (m.en && lower === m.en.toLowerCase()) return false;
+    }
+    return true;
+  });
+
+  return filtered.slice(0, 4).join(", ");
+}
+
 /* ----------------------------- compilación ------------------------------ */
 
-/** Ensambla un set de producción completo a partir del formulario. */
+/** Ensambla un set de producción completo a partir del formulario en tiempo real. */
 export function compileSet(form: CompositorForm): ProductionSet {
   const decisions: Decision[] = [];
   const warnings: string[] = [];
@@ -441,11 +664,14 @@ export function compileSet(form: CompositorForm): ProductionSet {
   });
 
   /* ---- Paso 2: emoción y contexto ---- */
-  const mood = MOODS.find((m) => m.id === form.moodId);
+  const isAutoMood = !form.moodId || form.moodId === "auto";
+  const effectiveMood = resolveEffectiveMood(form);
   const cinematic = form.cinematic.trim();
   decisions.push({
     step: "2 · Emoción",
-    detail: `${mood?.es ?? "—"}${cinematic ? ` · contexto: “${cinematic}”` : ""}`,
+    detail: `${effectiveMood.es}${isAutoMood ? " (elegido automáticamente según el tema/género)" : ""}${
+      cinematic ? ` · contexto: “${cinematic}”` : ""
+    }`,
   });
 
   /* ---- Paso 3: instrumentación ---- */
@@ -469,18 +695,27 @@ export function compileSet(form: CompositorForm): ProductionSet {
     ]
       .filter(Boolean)
       .join(", ");
+  } else if (form.vocalTechnique || form.vocalAttitude) {
+    vocal = [form.vocalTechnique, form.vocalAttitude ? `${form.vocalAttitude} delivery` : ""]
+      .filter(Boolean)
+      .join(", ");
   }
   decisions.push({ step: "4 · Voz", detail: vocal || "no especificada · el modelo decide" });
 
   /* ---- Paso 5: metadatos técnicos ---- */
   const bpmValue = form.bpm.trim() || String(presetBpm(preset));
+  const resolvedKey = inferDefaultKey(form);
+  const effectiveKeyScale = resolvedKey.keyScale;
   const technical = unique([
     `${bpmValue} BPM`,
-    form.keyScale,
+    effectiveKeyScale,
     form.musicalMode,
     ...profile.terms.slice(0, 2),
   ]).join(", ");
-  decisions.push({ step: "5 · Técnica", detail: technical });
+  decisions.push({
+    step: "5 · Técnica",
+    detail: `${technical}${resolvedKey.autoSelected ? " (tonalidad determinada por el motor)" : ""}`,
+  });
 
   const dyn = calculateDynamicParameters(form);
   const finalWeirdness = typeof form.weirdness === "number" ? form.weirdness : dyn.weirdness;
@@ -490,7 +725,7 @@ export function compileSet(form: CompositorForm): ProductionSet {
     detail: `Weirdness ${finalWeirdness} · Style Influence ${finalInfluence} % (${dyn.rationale}) · Variety 0 (Off)`,
   });
 
-  /* ---- Ensamblado sobre el style prompt del preset ---- */
+  /* ---- Ensamblado reactivo sobre el style prompt del preset ---- */
   const parts: string[] = [];
   if (form.maxMode) {
     const synthetic = /urbano|trap|edm|electronic/i.test(preset.group);
@@ -505,16 +740,23 @@ export function compileSet(form: CompositorForm): ProductionSet {
 
   parts.push(preset.styleBase);
   if (refine) parts.push(refine);
-  if (mood) parts.push(mood.en);
+  if (effectiveMood.en) parts.push(effectiveMood.en);
   if (extraInstruments.length) parts.push(extraInstruments.join(", "));
   if (vocal) parts.push(vocal);
   if (cinematic) parts.push(`evoking ${cinematic}`);
+
+  const aiNuance = extractReactiveNuance(form.styleOverride, parts);
+  if (aiNuance) {
+    parts.push(aiNuance);
+    decisions.push({
+      step: "Matiz IA",
+      detail: aiNuance,
+    });
+  }
+
   parts.push(technical);
 
-  const override = form.styleOverride.trim();
-  const stylePrompt = override
-    ? override.slice(0, SUNO_LIMITS.styleMaxChars)
-    : fitParts(parts, SUNO_LIMITS.styleMaxChars);
+  const stylePrompt = fitParts(parts, SUNO_LIMITS.styleMaxChars);
 
   /* ---- exclusiones: las del preset + las elegidas ---- */
   const excludeIds = unique([...preset.defaultExclusions, ...form.exclude]);
@@ -523,13 +765,14 @@ export function compileSet(form: CompositorForm): ProductionSet {
     .filter((v): v is (typeof EXCLUSIONS)[number]["en"] => typeof v === "string");
   const excludeStyles = fitParts(excludes, SUNO_LIMITS.excludeMaxChars);
 
-  /* ---- letra ---- */
+  /* ---- letra (reactiva a Puente Instrumental y Entrada Vocal Inmediata) ---- */
+  const bridgeTag = form.instrumentalBridge ? `[Bridge: ${preset.instruments[0]} Solo]` : "[Bridge]";
   const scaffold = [
     "[Intro]",
     `(instrumental · ${preset.instruments.slice(0, 2).join(" y ")})`,
     "",
     "[Verse 1]",
-    "(pega aquí tu primera estrofa)",
+    "(pega aquí tu primera estrofa o genera el pack con IA al final del formulario)",
     "",
     "[Pre-Chorus]",
     "(sube la tensión: filtro que abre, armonía que asciende)",
@@ -540,7 +783,7 @@ export function compileSet(form: CompositorForm): ProductionSet {
     "[Verse 2]",
     "(cuenta un detalle concreto, no repitas la primera estrofa)",
     "",
-    form.instrumentalBridge ? `[Bridge: ${preset.instruments[0]} Solo]` : "[Bridge]",
+    bridgeTag,
     form.instrumentalBridge ? "(solo instrumental, sin voz)" : "(cambio de perspectiva o de armonía)",
     "",
     "[Chorus]",
@@ -551,16 +794,30 @@ export function compileSet(form: CompositorForm): ProductionSet {
     "[End]",
   ].join("\n");
 
-  let lyrics = form.lyrics.trim() ? form.lyrics : scaffold;
+  let lyrics = form.lyrics.trim() ? form.lyrics.trim() : scaffold;
   if (!form.lyrics.trim()) {
     notes.push(`Esqueleto basado en ${preset.name}: ${preset.structureHint}`);
-  } else if (!/\[(intro|verso|verse|coro|chorus|estribillo)/i.test(lyrics)) {
-    lyrics = `[Verse 1]\n${lyrics}`;
-    notes.push("Tu letra no tenía etiquetas de estructura: se añadió [Verse 1] al principio. Revisa el resto.");
+  } else {
+    if (!/\[(intro|verso|verse|coro|chorus|estribillo)/i.test(lyrics)) {
+      lyrics = `[Verse 1]\n${lyrics}`;
+      notes.push("Tu letra no tenía etiquetas de estructura: se añadió [Verse 1] al principio. Revisa el resto.");
+    }
+    // Sincronización reactiva del puente instrumental sobre letras ya generadas
+    if (form.instrumentalBridge) {
+      if (/\[Bridge\]/i.test(lyrics)) {
+        lyrics = lyrics.replace(/\[Bridge\]/gi, bridgeTag);
+      }
+    } else if (/\[Bridge:\s*[^\]]*Solo\]/i.test(lyrics)) {
+      lyrics = lyrics.replace(/\[Bridge:\s*[^\]]*Solo\]/gi, "[Bridge]");
+    }
   }
 
-  if (form.vocalEntryHack && !lyrics.startsWith("[***]")) {
-    lyrics = `[***]\n[start_on_through]\n\n${lyrics}`;
+  // Sincronización reactiva de Entrada Vocal Inmediata [***]
+  const strippedHack = lyrics.replace(/^\[\*\*\*\]\s*(\[start_on_through\]\s*)?/i, "").trim();
+  if (form.vocalEntryHack) {
+    lyrics = `[***]\n[start_on_through]\n\n${strippedHack}`;
+  } else {
+    lyrics = strippedHack;
   }
 
   /* ---- notas de ingeniería ---- */
@@ -569,7 +826,7 @@ export function compileSet(form: CompositorForm): ProductionSet {
     `Estilo base del preset «${preset.name}»: ${preset.instruments.join(", ")}. BPM de referencia ${preset.bpmLabel}.`,
     preset.structureHint,
     "Variety a 0 (Off): el manual de SUNO 6.0 confirma que con cualquier otro valor el sistema reescribe el brief antes de generar y deja de respetarlo.",
-    `Style Influence ${profile.styleInfluence} % y Weirdness ${profile.weirdness}: el rango recomendado es 70–90 % y 30–50 para conservar coherencia de género.`,
+    `Style Influence ${finalInfluence} % y Weirdness ${finalWeirdness}: ajustados dinámicamente según género, emoción y etiquetas.`,
     "Cierra la letra con [End] para impedir que el motor añada relleno instrumental tras el final natural.",
     "Nada de negaciones en el campo Style («no drums», «without autotune»): se procesan como atención positiva. Van en Exclude Styles.",
     "El campo style va en inglés y admite 1000 caracteres; la densidad técnica importa más que la longitud. La letra va aparte.",
@@ -615,14 +872,15 @@ export function compileSet(form: CompositorForm): ProductionSet {
     excludeChars <= SUNO_LIMITS.excludeMaxChars;
 
   return {
-    title: slugTitle(form.idea || `${preset.name} ${mood?.es ?? ""}`),
+    title: slugTitle(form.idea || `${preset.name} ${effectiveMood.es}`),
     stylePrompt,
     excludeStyles,
     lyrics,
     weirdness: finalWeirdness,
     styleInfluence: finalInfluence,
     bpm: bpmValue,
-    keyScale: form.keyScale || "A minor",
+    keyScale: effectiveKeyScale,
+    effectiveMoodId: effectiveMood.id,
     paramsRationale: dyn.rationale,
     engineerNotes,
     presetName: preset.name,

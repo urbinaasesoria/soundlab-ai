@@ -65,12 +65,15 @@ export async function decodeFile(file: File, options: DecodeOptions = {}): Promi
   };
 }
 
-export function sliceTrack(track: DecodedTrack, seconds: number): DecodedTrack {
-  const length = Math.min(track.channels[0]?.length ?? 0, Math.round(seconds * track.sampleRate));
+export function sliceTrack(track: DecodedTrack, seconds: number, startSeconds = 0): DecodedTrack {
+  const totalSamples = track.channels[0]?.length ?? 0;
+  const startSample = Math.max(0, Math.min(totalSamples, Math.round(startSeconds * track.sampleRate)));
+  const endSample = Math.min(totalSamples, startSample + Math.round(seconds * track.sampleRate));
+  const actualLength = Math.max(0, endSample - startSample);
   return {
     ...track,
-    duration: length / track.sampleRate,
-    channels: track.channels.map((ch) => ch.subarray(0, length)),
+    duration: actualLength / track.sampleRate,
+    channels: track.channels.map((ch) => ch.subarray(startSample, endSample)),
   };
 }
 

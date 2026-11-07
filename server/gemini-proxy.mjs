@@ -319,9 +319,16 @@ const COMPOSE_SCHEMA = {
   properties: {
     title: { type: "string" },
     stylePrompt: { type: "string" },
+    styleNuance: { type: "string" },
     excludeStyles: { type: "string" },
     lyrics: { type: "string" },
     lyricsNotes: { type: "string" },
+    suggestedMoodId: {
+      type: "string",
+      enum: ["dreamy", "dark", "uplifting", "nostalgic", "aggressive", "ethereal", "intimate", "melancholic"],
+    },
+    suggestedKeyScale: { type: "string" },
+    suggestedBpm: { type: "number" },
     rationale: { type: "array", items: { type: "string" } },
     warnings: { type: "array", items: { type: "string" } },
   },
@@ -330,8 +337,8 @@ const COMPOSE_SCHEMA = {
 
 const COMPOSE_SYSTEM = `${SYSTEM_PROMPT}
 
-MODO COMPOSICIÓN DE LETRA
-En esta llamada debes devolver el SET COMPLETO: stylePrompt, excludeStyles y la LETRA.
+MODO GENERACIÓN INTEGRAL DE PACK (ESTILO + LETRA + METADATOS)
+En esta llamada debes devolver el SET COMPLETO tomando en cuenta TODOS los parámetros de producción configurados por el usuario: stylePrompt, styleNuance, excludeStyles, la LETRA y las recomendaciones de dirección emocional (suggestedMoodId) y tonalidad (suggestedKeyScale).
 
 LETRA — REGLAS ESTRICTAS (manual SUNO 6.0, §2.B y §5)
 1. Escribe letra ORIGINAL en el idioma del usuario (por defecto español). Prohibido reproducir o parafrasear
@@ -340,28 +347,44 @@ LETRA — REGLAS ESTRICTAS (manual SUNO 6.0, §2.B y §5)
    [Outro] y CIERRA SIEMPRE con [End].
 3. El [Chorus] debe tener entre 2 y 4 líneas: más allá se diluye el gancho. Las estrofas admiten hasta 8 líneas.
 4. Puedes usar pipe-stacking para directivas locales: [Chorus | Anthemic | Stacked Harmonies].
-5. Si el set pide entrada vocal inmediata, empieza con [***], [start_on_through] y [start_on_"<primeras palabras>"].
-6. La letra debe encajar con el BPM, la tonalidad, el mood y el género del set: métrica regular y sin
-   adjetivos vacíos. Nada de nombres de artistas, canciones ni marcas.
-7. Máximo 5.000 caracteres. Si el usuario ya aporta letra, reescríbela conservando su idea y su métrica,
-   sin cambiar el mensaje.
-8. Devuelve el stylePrompt coherente con esa letra (misma emoción y misma instrumentación).
-9. En lyricsNotes explica en una frase las decisiones de estructura. En rationale, una línea por decisión.
-10. IDIOMA: escribe la letra en el idioma pedido, sin mezclar salvo que se pida spanglish. Los metatags
-    entre corchetes permanecen en inglés porque es la sintaxis que entiende el motor.
-11. PUNTO DE VISTA: respeta la persona gramatical pedida (yo / tú / él-ella / observador / nosotros) de
-    principio a fin. No cambies de narrador a mitad de la canción.`;
+5. Si el set pide entrada vocal inmediata, empieza con [***], [start_on_through].
+6. Si el set pide puente instrumental, usa [Bridge: <Instrument> Solo] en inglés.
+7. La letra debe encajar con el BPM, la tonalidad, el mood, la técnica/actitud vocal, las etiquetas de producción
+   y el género del set: métrica regular y sin adjetivos vacíos. Nada de nombres de artistas, canciones ni marcas.
+8. Máximo 5.000 caracteres:
+   - Si el modo es "keep" (el usuario pidió mantener su letra intacta), NO alteres ni reescribas sus versos: conserva sus palabras exactas y añade únicamente los metatags estructurales en inglés ([Verse 1], [Chorus], [End], etc.) donde correspondan.
+   - Si el modo es "rewrite" (el usuario aportó una letra sin marcar mantener intacta), MEJORA y OPTIMIZA su letra (métrica, imágenes poéticas, cadencia rítmica para el BPM indicado y estructura de metatags de SUNO 6.0) conservando su idea central y mensaje.
+   - Si el modo es "create" (solo dio una historia, temática o idea), escribe la letra completa desde cero.
+9. En styleNuance devuelve de 2 a 4 cláusulas descriptivas en inglés específicas para la atmósfera e instrumentación de esta canción (sin repetir el BPM ni la tonalidad, para que el pack pueda actualizarse dinámicamente si el usuario cambia parámetros después).
+10. En suggestedMoodId devuelve siempre cuál de los 8 estados emocionales ("dreamy", "dark", "uplifting", "nostalgic", "aggressive", "ethereal", "intimate", "melancholic") encaja mejor con la canción.
+11. En suggestedKeyScale devuelve siempre la tonalidad óptima en formato inglés (ej. "A minor", "D minor", "C major", "G major", "F# minor") acorde al género, emoción y registro vocal.
+12. IDIOMA: escribe la letra en el idioma pedido, sin mezclar salvo que se pida spanglish. Los metatags entre corchetes permanecen en inglés.
+13. PUNTO DE VISTA: respeta la persona gramatical pedida (yo / tú / él-ella / observador / nosotros) de principio a fin.`;
 
 function composeUserText(payload) {
   const {
     idea = "",
     preset = "(sin especificar)",
+    customGenre = "",
     set = "",
     stylePrompt = "",
     bpm = "",
     keyScale = "",
+    musicalMode = "",
     mood = "",
+    moodAuto = false,
+    keyAuto = false,
+    cinematic = "",
     vocal = "",
+    productionKeywords = [],
+    excludeStyles = "",
+    profile = "equilibrado",
+    weirdness = 40,
+    styleInfluence = 80,
+    maxMode = false,
+    vocalEntryHack = false,
+    instrumentalBridge = false,
+    keepLyrics = false,
     language = "es",
     pov = "",
     existingLyrics = "",
@@ -371,11 +394,24 @@ function composeUserText(payload) {
   } = payload ?? {};
 
   return [
-    `PRESET DE GÉNERO: ${preset}`,
+    `PRESET DE GÉNERO: ${preset}${customGenre ? ` (matiz: ${customGenre})` : ""}`,
     bpm ? `BPM: ${bpm}` : "",
-    keyScale ? `TONALIDAD: ${keyScale}` : "",
-    mood ? `EMOCIÓN: ${mood}` : "",
-    vocal ? `PERFIL VOCAL: ${vocal}` : "",
+    keyAuto || !keyScale
+      ? "TONALIDAD: Sin definir por el usuario — ELÍGELA TÚ en suggestedKeyScale según género, voz y emoción."
+      : `TONALIDAD ELEGIDA: ${keyScale}`,
+    musicalMode ? `MODO MUSICAL: ${musicalMode}` : "",
+    moodAuto || !mood || mood === "auto"
+      ? "DIRECCIÓN EMOCIONAL: Sin definir por el usuario — ELÍGELA TÚ en suggestedMoodId según la historia, letra y género."
+      : `DIRECCIÓN EMOCIONAL ELEGIDA: ${mood}`,
+    cinematic ? `IMAGEN CINEMATOGRÁFICA: ${cinematic}` : "",
+    vocal ? `PERFIL VOCAL (género, técnica y actitud): ${vocal}` : "PERFIL VOCAL: no especificado (sugiere el tratamiento vocal en el estilo)",
+    Array.isArray(productionKeywords) && productionKeywords.length > 0
+      ? `ETIQUETAS DE PRODUCCIÓN: ${productionKeywords.join(", ")}`
+      : "",
+    excludeStyles ? `EXCLUSIONES ACTIVAS: ${excludeStyles}` : "",
+    `PERFIL CREATIVO: ${profile} (Weirdness ${weirdness}, Style Influence ${styleInfluence}%, MaxMode: ${maxMode ? "SÍ" : "NO"})`,
+    vocalEntryHack ? "DIRECTIVA ESTRUCTURAL: Entrada vocal inmediata activada ([***] [start_on_through])." : "",
+    instrumentalBridge ? "DIRECTIVA ESTRUCTURAL: Incluir puente con solo instrumental tras el primer o segundo coro ([Bridge: Instrument Solo])." : "",
     language
       ? `IDIOMA DE LA LETRA: ${
           { es: "español", en: "inglés", pt: "portugués", "es-en": "spanglish (español con el estribillo en inglés)" }[language] ??
@@ -393,18 +429,20 @@ function composeUserText(payload) {
           }[pov] ?? pov
         }. Mantenlo de forma consistente de principio a fin; no cambies de persona a mitad de canción.`
       : "",
-    idea ? `IDEA DE PARTIDA DEL USUARIO (respétala): """${String(idea).slice(0, 2000)}"""` : "",
+    idea ? `IDEA / TEMÁTICA DEL USUARIO (respétala): """${String(idea).slice(0, 2000)}"""` : "",
     existingLyrics
-      ? `LETRA ACTUAL DEL USUARIO (modo ${mode === "rewrite" ? "REESCRITURA: conserva idea y métrica" : "referencia"}):\n"""${String(existingLyrics).slice(0, 4000)}"""`
-      : "El usuario NO tiene letra: escríbela desde cero a partir de la idea.",
-    stylePrompt ? `SET ACTUAL DEL MOTOR (mejóralo, no lo traiciones):\n"""${String(set || stylePrompt).slice(0, 2000)}"""` : "",
+      ? keepLyrics || mode === "keep"
+        ? `LETRA DEL USUARIO (MODO MANTENER INTACTA: respeta sus versos palabra por palabra sin reescribirlos; solo añade o corrige los metatags estructurales en inglés [Verse 1], [Chorus], [End]):\n"""${String(existingLyrics).slice(0, 4000)}"""`
+        : `LETRA BORRADOR DEL USUARIO (MODO OPTIMIZAR Y MEJORAR: pule la métrica, el gancho del estribillo y las imágenes poéticas para encajar con todos los parámetros de producción e incluye metatags de SUNO 6.0, conservando su historia):\n"""${String(existingLyrics).slice(0, 4000)}"""`
+      : "El usuario NO incluyó letra: escríbela desde cero a partir de la temática y todos los parámetros de producción.",
+    stylePrompt ? `SET BASE ACTUAL DEL MOTOR (mejóralo e intégralo):\n"""${String(set || stylePrompt).slice(0, 2000)}"""` : "",
     variant > 1
-      ? `VARIANTE ${variant}: el usuario RECHAZÓ la versión anterior. Busca un ángulo CLARAMENTE distinto — otra estructura, otras imágenes, otro punto de vista narrativo o incluso otro narrador. Prohibido reutilizar versos, rimas o estribillos de intentos previos.`
+      ? `VARIANTE ${variant}: el usuario pidió otra versión. Busca un ángulo CLARAMENTE distinto — otra estructura, otras imágenes o cadencia. Prohibido reutilizar versos, rimas o estribillos de intentos previos.`
       : "",
     avoid
       ? `NO REUTILICES NADA DE ESTA VERSIÓN PREVIA (ni sus imágenes ni sus rimas):\n"""${String(avoid).slice(0, 3000)}"""`
       : "",
-    "Devuelve el JSON con el set completo.",
+    "Devuelve el JSON con el set completo (title, stylePrompt, styleNuance, excludeStyles, lyrics, lyricsNotes, suggestedMoodId, suggestedKeyScale, suggestedBpm, rationale, warnings).",
   ]
     .filter(Boolean)
     .join("\n");
@@ -479,9 +517,13 @@ async function handleCompose(req, res) {
     return send(req, res, 200, {
       title: parsed.title ?? "",
       stylePrompt: safe.stylePrompt,
+      styleNuance: typeof parsed.styleNuance === "string" ? parsed.styleNuance.slice(0, 350) : "",
       excludeStyles: safe.excludeStyles,
       lyrics: /\[End\]\s*$/i.test(lyrics) ? lyrics : `${lyrics.trim()}\n\n[End]`,
       lyricsNotes: parsed.lyricsNotes ?? "",
+      suggestedMoodId: typeof parsed.suggestedMoodId === "string" ? parsed.suggestedMoodId : undefined,
+      suggestedKeyScale: typeof parsed.suggestedKeyScale === "string" ? parsed.suggestedKeyScale : undefined,
+      suggestedBpm: typeof parsed.suggestedBpm === "number" ? parsed.suggestedBpm : undefined,
       rationale: Array.isArray(parsed.rationale) ? parsed.rationale : [],
       warnings,
       model: MODEL,
@@ -495,6 +537,118 @@ async function handleCompose(req, res) {
   } catch (error) {
     console.error("[proxy] fallo de red (compose)", error?.name ?? "error");
     return send(req, res, 502, { error: "no se pudo contactar con el proveedor" });
+  }
+}
+
+/* --------------------- clasificación IA de referencia ------------------- */
+
+const ANALYZE_REF_SCHEMA = {
+  type: "object",
+  properties: {
+    presetId: {
+      type: "string",
+      enum: [
+        "cumbia-peruana",
+        "cumbia-nortena",
+        "cumbia-surena",
+        "cumbia-amazonica",
+        "huayno-andino",
+        "caporales",
+        "festejo",
+        "vals-criollo",
+        "salsa-clasica",
+        "bachata-moderna",
+        "merengue",
+        "bolero-nocturno",
+        "reggaeton-perreo",
+        "trap-oscuro",
+        "afrobeat-latino",
+        "pop-latino",
+        "balada-pop",
+        "rock-en-espanol",
+        "rock-alternativo",
+        "bossa-jazz",
+      ],
+    },
+    bpm: { type: "number" },
+    keyScale: { type: "string" },
+    moodId: {
+      type: "string",
+      enum: ["dreamy", "dark", "uplifting", "nostalgic", "aggressive", "ethereal", "intimate", "melancholic"],
+    },
+    vocalGender: {
+      type: "string",
+      enum: ["", "female", "male", "duet", "instrumental"],
+    },
+    vocalTechnique: { type: "string" },
+    vocalAttitude: { type: "string" },
+    productionKeywords: { type: "array", items: { type: "string" } },
+    rationale: { type: "array", items: { type: "string" } },
+  },
+  required: ["presetId", "moodId", "rationale"],
+};
+
+const ANALYZE_REF_SYSTEM = `Eres un musicólogo e ingeniero de mastering experto en géneros latinoamericanos e internacionales.
+Recibirás la telemetría DSP real de una pista de audio (balance espectral en 7 bandas SUB/LOW/LOW-MID/MID/HIGH-MID/HIGH/AIR, BPM medido y subdivisión half-time/double-time, entropía armónica cromática, tonalidad, rango dinámico LRA, crest factor, densidad de ataques, cuantización rítmica gridLock, jitter en ms, ancho estéreo y nombre del archivo).
+También recibirás los 3 candidatos que preseleccionó el clasificador acústico local.
+
+Tu misión:
+1. Determinar con la máxima precisión cuál de los 20 presets de la casa representa mejor a la canción analizada.
+2. Si el nombre del archivo contiene el título o artista de una canción conocida o una pista clara del género, úsalo junto con la firma espectral para acertar el género real y corregir posibles ambigüedades de octava de BPM (por ejemplo, baladas medidas al doble de tempo o trap medido a mitad de tempo).
+3. Determinar la dirección emocional (moodId), el perfil vocal probable (vocalGender, vocalTechnique, vocalAttitude) y hasta 3 productionKeywords válidos ("punchy drums", "dry mix", "reverb heavy", "sidechain compression", "tape saturation", "wide stereo image", "cinematic production", "lo-fi texture", "gated reverb", "analog warmth", "acoustic instruments").
+4. En rationale devuelve de 2 a 4 viñetas breves en español explicando técnicamente el porqué del diagnóstico.`;
+
+async function handleAnalyzeRef(req, res) {
+  let payload;
+  try {
+    payload = await parseBody(req);
+  } catch (err) {
+    return send(req, res, err?.status || 400, { error: err?.message || "JSON inválido" });
+  }
+
+  if (!payload?.telemetry || typeof payload.telemetry !== "object") {
+    return send(req, res, 400, { error: "falta telemetría de referencia" });
+  }
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-goog-api-key": API_KEY },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: ANALYZE_REF_SYSTEM }] },
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: `TELEMETRÍA ACÚSTICA Y CANDIDATOS DSP:\n${JSON.stringify(payload.telemetry).slice(0, 8000)}` }],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.25,
+          maxOutputTokens: 1200,
+          responseMimeType: "application/json",
+          responseSchema: ANALYZE_REF_SCHEMA,
+          thinkingConfig: { thinkingBudget: 0 },
+        },
+      }),
+      signal: AbortSignal.timeout(25_000),
+    });
+
+    if (!response.ok) {
+      return send(req, res, 502, { error: `el proveedor respondió ${response.status}` });
+    }
+
+    const data = await response.json();
+    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    const parsed = JSON.parse(raw);
+    return send(req, res, 200, {
+      ...parsed,
+      model: MODEL,
+    });
+  } catch (error) {
+    console.error("[proxy] fallo en analyze-ref:", error?.message ?? "error");
+    return send(req, res, 502, { error: "no se pudo refinar con IA" });
   }
 }
 
@@ -737,7 +891,7 @@ export async function handleRequest(req, res) {
     return send(req, res, 405, { error: "Usa método POST para consultar Suno MCP" });
   }
 
-  if (req.method !== "POST" || !["/api/suggest", "/api/compose", "/api/narrate"].includes(pathname)) {
+  if (req.method !== "POST" || !["/api/suggest", "/api/compose", "/api/narrate", "/api/analyze-ref"].includes(pathname)) {
     return send(req, res, 404, { error: "ruta no encontrada" });
   }
 
@@ -747,6 +901,7 @@ export async function handleRequest(req, res) {
 
   if (pathname === "/api/compose") void handleCompose(req, res);
   else if (pathname === "/api/narrate") void handleNarrate(req, res);
+  else if (pathname === "/api/analyze-ref") void handleAnalyzeRef(req, res);
   else void handleSuggest(req, res);
 }
 

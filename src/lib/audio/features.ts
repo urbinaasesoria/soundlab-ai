@@ -244,7 +244,11 @@ export function estimateBpm(
   }
   const corrAt = (bpm: number) => {
     const lag = Math.round((60 * frameRate) / bpm);
-    return lag >= minLag && lag <= maxLag ? corr[lag] : 0;
+    if (lag < minLag || lag > maxLag) return 0;
+    const c0 = corr[lag] ?? 0;
+    const cPrev = lag > minLag ? (corr[lag - 1] ?? 0) : 0;
+    const cNext = lag < maxLag ? (corr[lag + 1] ?? 0) : 0;
+    return Math.max(c0, cPrev, cNext);
   };
 
   // Periodo base por intervalo mediano entre ataques.
@@ -259,25 +263,30 @@ export function estimateBpm(
     const med = sorted[Math.floor(sorted.length / 2)];
     baseBpm = 60 / med;
   }
-  if (!baseBpm) {
-    // Sin ataques suficientes: se usa el pico de autocorrelación.
-    let bestLag = minLag;
-    for (let lag = minLag; lag <= maxLag; lag++) if (corr[lag] > corr[bestLag]) bestLag = lag;
-    baseBpm = (60 * frameRate) / bestLag;
+
+  // Pico principal de autocorrelación (clave en música real con síncopa donde
+  // los IOIs individuales mezclan corcheas, semicorcheas y contratiempos).
+  let bestLag = minLag;
+  for (let lag = minLag; lag <= maxLag; lag++) {
+    if (corr[lag] > corr[bestLag]) bestLag = lag;
   }
+  const acBpm = (60 * frameRate) / bestLag;
+  if (!baseBpm) baseBpm = acBpm;
 
   // Preferencia perceptual log-normal centrada en 120 BPM.
   const prior = (bpm: number) => Math.exp(-0.5 * (Math.log2(Math.max(bpm, 1) / 120) / 0.85) ** 2);
 
   const candidates: { bpm: number; score: number; corr: number }[] = [];
-  for (const mult of [1 / 2, 2 / 3, 1, 3 / 2, 2]) {
-    const bpm = baseBpm * mult;
-    if (bpm < 45 || bpm > 210) continue;
-    const c = corrAt(bpm);
-    candidates.push({ bpm, score: c * prior(bpm), corr: c });
+  const seeds = acBpm > 0 && Math.abs(acBpm - baseBpm) > 2 ? [baseBpm, acBpm] : [baseBpm];
+  for (const seed of seeds) {
+    for (const mult of [1 / 2, 2 / 3, 1, 3 / 2, 2]) {
+      const bpm = seed * mult;
+      if (bpm < 45 || bpm > 210) continue;
+      const c = corrAt(bpm);
+      candidates.push({ bpm, score: c * prior(bpm), corr: c });
+    }
+    candidates.push({ bpm: seed, score: corrAt(seed) * prior(seed), corr: corrAt(seed) });
   }
-  // El propio tempo base siempre compite, aunque su IOI quede fuera de rango.
-  candidates.push({ bpm: baseBpm, score: corrAt(baseBpm) * prior(baseBpm), corr: corrAt(baseBpm) });
 
   candidates.sort((a, b) => b.score - a.score);
   const winner = candidates[0];
@@ -586,13 +595,23 @@ export async function extractFeatures(
       if (band.low >= 6000 && band.high <= 12000) hfEnergy10to16 += e;
     }
 
-    // croma (55 Hz – 5 kHz)
-    for (let b = 1; b < bins; b++) {
-      const hz = b * binHz;
-      if (hz < 55 || hz > 5000) continue;
+    // croma (60 Hz – 2200 Hz): picos armónicos con interpolación parabólica y
+    // ponderación hacia fundamentales, atenuando tramas ruidosas (percusión).
+    const frameWeight = flatnessArr[f] < 0.35 ? 1 : 0.15;
+    for (let b = 2; b < bins - 1; b++) {
+      const hzBase = b * binHz;
+      if (hzBase < 60 || hzBase > 2200) continue;
+      const m = mags[b];
+      if (m < mags[b - 1] || m < mags[b + 1]) continue;
+      const a = mags[b - 1];
+      const c = mags[b + 1];
+      const denom = a - 2 * m + c;
+      const delta = denom !== 0 ? Math.max(-0.5, Math.min(0.5, (0.5 * (a - c)) / denom)) : 0;
+      const hz = (b + delta) * binHz;
       const midi = 69 + 12 * Math.log2(hz / 440);
       const pc = ((Math.round(midi) % 12) + 12) % 12;
-      chroma[pc] += mags[b];
+      const freqWeight = 1 / Math.sqrt(Math.max(1, hz / 110));
+      chroma[pc] += m * m * freqWeight * frameWeight;
     }
 
     // ZCR

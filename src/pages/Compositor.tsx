@@ -1126,6 +1126,22 @@ export function CompositorPage() {
 
             <div className="composer-out__block">
               <div className="composer-out__row">
+                <span className="mono">LYRICS / LETRA</span>
+                <span className="mono">
+                  {result.checks.lyricsChars}/{result.checks.lyricsLimit}
+                </span>
+              </div>
+              <div className="composer-meter">
+                <span style={{ width: `${lyricsPct}%` }} />
+              </div>
+              <pre className="composer-lyrics">{result.lyrics}</pre>
+              <button className="btn btn--ghost btn--sm" onClick={() => copy(result.lyrics, "Letra")}>
+                <ClipboardCopy size={12} /> Copiar
+              </button>
+            </div>
+
+            <div className="composer-out__block">
+              <div className="composer-out__row">
                 <span className="mono">STYLE PROMPT</span>
                 <span className="mono">
                   {result.checks.styleChars}/{result.checks.styleLimit}
@@ -1157,22 +1173,11 @@ export function CompositorPage() {
                 <span className="mono">{result.checks.excludeChars}</span>
               </div>
               <p className="composer-out__text">{result.excludeStyles || "—"}</p>
-            </div>
-
-            <div className="composer-out__block">
-              <div className="composer-out__row">
-                <span className="mono">LETRA</span>
-                <span className="mono">
-                  {result.checks.lyricsChars}/{result.checks.lyricsLimit}
-                </span>
-              </div>
-              <div className="composer-meter">
-                <span style={{ width: `${lyricsPct}%` }} />
-              </div>
-              <pre className="composer-lyrics">{result.lyrics}</pre>
-              <button className="btn btn--ghost btn--sm" onClick={() => copy(result.lyrics, "Letra")}>
-                <ClipboardCopy size={12} /> Copiar
-              </button>
+              {result.excludeStyles && (
+                <button className="btn btn--ghost btn--sm" onClick={() => copy(result.excludeStyles, "Exclude styles")}>
+                  <ClipboardCopy size={12} /> Copiar
+                </button>
+              )}
             </div>
 
             <div className="composer-out__block">

@@ -161,7 +161,35 @@ export function SunoMcpModal({ open, onClose, set }: SunoMcpModalProps) {
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {/* Style Prompt */}
+            {/* 1. Letra / Estructura */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                background: "var(--color-surface)",
+                padding: "10px 14px",
+                borderRadius: "var(--radius-sm)",
+              }}
+            >
+              <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginRight: 12 }}>
+                <span className="mono" style={{ fontSize: 11, color: "var(--color-gold)", marginRight: 8 }}>
+                  LYRICS:
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 500 }}>
+                  {set.lyrics ? `${set.lyrics.replace(/\s+/g, " ").slice(0, 65)}…` : "(Modo Instrumental)"}
+                </span>
+              </div>
+              <button
+                className="btn btn--ghost btn--sm"
+                onClick={() => copyToClipboard(set.lyrics, "Letra")}
+              >
+                {copiedField === "Letra" ? <Check size={13} className="emerald" /> : <Copy size={13} />}
+                {copiedField === "Letra" ? "Copiado" : "Copiar"}
+              </button>
+            </div>
+
+            {/* 2. Style Prompt */}
             <div
               style={{
                 display: "flex",
@@ -187,35 +215,7 @@ export function SunoMcpModal({ open, onClose, set }: SunoMcpModalProps) {
               </button>
             </div>
 
-            {/* Letra / Estructura */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                background: "var(--color-surface)",
-                padding: "10px 14px",
-                borderRadius: "var(--radius-sm)",
-              }}
-            >
-              <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginRight: 12 }}>
-                <span className="mono" style={{ fontSize: 11, color: "var(--color-gold)", marginRight: 8 }}>
-                  LYRICS:
-                </span>
-                <span style={{ fontSize: 13, fontWeight: 500 }}>
-                  {set.lyrics ? `${set.lyrics.slice(0, 55)}…` : "(Modo Instrumental)"}
-                </span>
-              </div>
-              <button
-                className="btn btn--ghost btn--sm"
-                onClick={() => copyToClipboard(set.lyrics, "Letra")}
-              >
-                {copiedField === "Letra" ? <Check size={13} className="emerald" /> : <Copy size={13} />}
-                {copiedField === "Letra" ? "Copiado" : "Copiar"}
-              </button>
-            </div>
-
-            {/* Exclude Styles */}
+            {/* 3. Exclude Styles */}
             {set.excludeStyles && (
               <div
                 style={{

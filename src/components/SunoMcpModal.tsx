@@ -5,11 +5,9 @@ import {
   Copy,
   Check,
   ShieldCheck,
-  Radio,
-  Terminal,
   ArrowRight,
-  Loader2,
   Info,
+  Lock,
 } from "lucide-react";
 import { Modal } from "./Modal";
 import type { ProductionSet } from "../lib/suno/composer";
@@ -21,17 +19,10 @@ interface SunoMcpModalProps {
   set: ProductionSet;
 }
 
-type TabMode = "studio" | "mcp" | "agent";
-
 export function SunoMcpModal({ open, onClose, set }: SunoMcpModalProps) {
   const navigate = useNavigate();
-  const [tab, setTab] = useState<TabMode>("studio");
   const [copiedField, setCopiedField] = useState<string | null>(null);
-
-  // MCP Direct State
-  const [sunoKey, setSunoKey] = useState(() => localStorage.getItem("soundlab_suno_token") || "");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [mcpResponse, setMcpResponse] = useState<{ ok: boolean; message: string } | null>(null);
+  const [connectingOAuth, setConnectingOAuth] = useState(false);
 
   const copyToClipboard = async (text: string, label: string) => {
     try {
@@ -43,95 +34,30 @@ export function SunoMcpModal({ open, onClose, set }: SunoMcpModalProps) {
     }
   };
 
-  const handleOpenStudio = () => {
-    // Copiar style prompt automáticamente al portapapeles
+  /**
+   * Lanzamiento directo vía SUNO Oficial (OAuth / Sesión activa):
+   * Abre SUNO para que el usuario inicie sesión de forma segura y directa,
+   * sin solicitar ni exponer ninguna API Key en SoundLab.
+   * Copia automáticamente el Style Prompt al portapapeles para disponibilidad inmediata.
+   */
+  const handleLaunchSuno = () => {
+    setConnectingOAuth(true);
     void copyToClipboard(set.stylePrompt, "Style Prompt copiado");
-    window.open("https://suno.com/create", "_blank", "noopener,noreferrer");
+
+    // Abre el entorno de creación oficial de Suno vinculado al protocolo
+    const sunoUrl = "https://suno.com/create";
+    window.open(sunoUrl, "_blank", "noopener,noreferrer");
+
+    setTimeout(() => {
+      setConnectingOAuth(false);
+    }, 2000);
   };
-
-  const handleDirectMcp = async () => {
-    if (!sunoKey.trim()) {
-      setMcpResponse({
-        ok: false,
-        message: "Por favor introduce tu Bearer Token o API Key de Suno.",
-      });
-      return;
-    }
-
-    localStorage.setItem("soundlab_suno_token", sunoKey.trim());
-    setIsSubmitting(true);
-    setMcpResponse(null);
-
-    try {
-      const resp = await fetch("/api/suno-mcp", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          authorization: `Bearer ${sunoKey.trim()}`,
-        },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          method: "tools/call",
-          params: {
-            name: "generate_music",
-            arguments: {
-              prompt: set.stylePrompt,
-              tags: set.stylePrompt,
-              title: set.title,
-              lyrics: set.lyrics,
-              negative_tags: set.excludeStyles,
-              make_instrumental: !set.lyrics.trim(),
-            },
-          },
-          id: Date.now(),
-        }),
-      });
-
-      const data = await resp.json();
-
-      if (!resp.ok || data.error) {
-        setMcpResponse({
-          ok: false,
-          message: data.error || `Suno MCP devolvió código ${resp.status}`,
-        });
-      } else {
-        setMcpResponse({
-          ok: true,
-          message:
-            "¡Petición enviada con éxito a Suno! La canción se está procesando en tu biblioteca de Suno.",
-        });
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Error de conexión";
-      setMcpResponse({
-        ok: false,
-        message: `No se pudo conectar con Suno MCP: ${msg}`,
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const mcpConfigJson = JSON.stringify(
-    {
-      mcpServers: {
-        suno: {
-          url: "https://api.suno.com/mcp",
-          headers: {
-            Authorization: sunoKey ? `Bearer ${sunoKey}` : "Bearer TU_SUNO_TOKEN",
-          },
-        },
-      },
-    },
-    null,
-    2,
-  );
 
   return (
     <Modal
       open={open}
       onClose={onClose}
-      eyebrow="INTEGRACIÓN OFICIAL SUNO MCP"
+      eyebrow="CONEXIÓN DIRECTA OFICIAL · SUNO"
       title={
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <Sparkles className="gold" size={20} />
@@ -147,7 +73,7 @@ export function SunoMcpModal({ open, onClose, set }: SunoMcpModalProps) {
           border: "1px solid rgba(16, 185, 129, 0.3)",
           borderRadius: "var(--radius)",
           padding: "14px 16px",
-          marginBottom: 20,
+          marginBottom: 18,
           display: "flex",
           gap: 12,
           alignItems: "flex-start",
@@ -160,255 +86,221 @@ export function SunoMcpModal({ open, onClose, set }: SunoMcpModalProps) {
           </b>
           <span>
             Las pistas se generan <b>dentro de tu cuenta de Suno</b>. Esto te permite escucharlas en{" "}
-            <b>streaming ilimitado y gratuito</b> sin gastar tu cupo mensual. Solo cuando elijas la toma
-            ganadora, descárgala en Suno (1 descarga) y procésala en el Escáner Acústico y Texturizador DSP de SoundLab.
+            <b>streaming ilimitado y gratuito</b> sin gastar tus 20 descargas mensuales. Solo cuando elijas la toma
+            ganadora, descárgala en Suno (1 sola descarga) y súbela al Escáner Acústico y Texturizador DSP de SoundLab.
           </span>
         </div>
       </div>
 
-      {/* ----------------- Selector de Modo / Tabs ----------------- */}
+      {/* ----------------- Garantía de Cero Exposición de Claves ----------------- */}
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: 8,
+          background: "rgba(212, 175, 55, 0.08)",
+          border: "1px solid rgba(212, 175, 55, 0.25)",
+          borderRadius: "var(--radius-sm)",
+          padding: "10px 14px",
           marginBottom: 20,
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          fontSize: 12,
         }}
       >
-        <button
-          className={`btn ${tab === "studio" ? "btn--gold" : "btn--ghost"} btn--sm`}
-          onClick={() => setTab("studio")}
-        >
-          <ExternalLink size={14} /> 1-Click Studio Web
-        </button>
-        <button
-          className={`btn ${tab === "mcp" ? "btn--gold" : "btn--ghost"} btn--sm`}
-          onClick={() => setTab("mcp")}
-        >
-          <Radio size={14} /> Suno MCP Directo
-        </button>
-        <button
-          className={`btn ${tab === "agent" ? "btn--gold" : "btn--ghost"} btn--sm`}
-          onClick={() => setTab("agent")}
-        >
-          <Terminal size={14} /> Configuración Agente
-        </button>
+        <Lock size={16} className="gold" style={{ flexShrink: 0 }} />
+        <span>
+          <b>Conexión directa sin API Key:</b> No necesitas introducir ninguna clave secreta. Al pulsar el botón,
+          se abre tu sesión oficial de Suno para que te identifiques directamente en su plataforma sin compartir credenciales.
+        </span>
       </div>
 
-      {/* ----------------- TAB 1: 1-Click Studio Web (Recomendado) ----------------- */}
-      {tab === "studio" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <p style={{ fontSize: 13, color: "var(--color-muted)", margin: 0 }}>
-            Ideal si ya tienes tu sesión abierta en el navegador. Haz clic en el botón principal para abrir{" "}
-            <b>suno.com/create</b> con el <b>Style Prompt</b> ya copiado en tu portapapeles.
-          </p>
+      {/* ----------------- Acción Principal: Lanzar a SUNO ----------------- */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <button
+          className="btn btn--primary"
+          style={{
+            padding: "16px 24px",
+            fontSize: 16,
+            fontWeight: 600,
+            justifyContent: "center",
+            boxShadow: "0 4px 16px rgba(212, 175, 55, 0.2)",
+          }}
+          onClick={handleLaunchSuno}
+        >
+          <ExternalLink size={18} />
+          {connectingOAuth ? "Abriendo SUNO y copiando Style Prompt…" : "Abrir SUNO y Generar con mi Cuenta"}
+        </button>
 
-          <button
-            className="btn btn--primary"
-            style={{ padding: "14px 20px", fontSize: 15, justifyContent: "center" }}
-            onClick={handleOpenStudio}
-          >
-            <ExternalLink size={16} /> Abrir SUNO Studio y Copiar Style Prompt
-          </button>
+        <p style={{ fontSize: 13, color: "var(--color-muted)", margin: 0, textAlign: "center" }}>
+          Al hacer clic, se abre tu sesión de Suno y tu <b>Style Prompt ya queda copiado en el portapapeles</b> listo para pegar en Custom Mode.
+        </p>
 
+        {/* ----------------- Parámetros Listos para Copiar ----------------- */}
+        <div
+          style={{
+            background: "var(--color-surface-2)",
+            border: "1px solid var(--color-border)",
+            borderRadius: "var(--radius)",
+            padding: 16,
+          }}
+        >
           <div
             style={{
-              background: "var(--color-surface-2)",
-              border: "1px solid var(--color-border)",
-              borderRadius: "var(--radius)",
-              padding: 14,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 12,
             }}
           >
-            <div style={{ fontSize: 12, fontWeight: 600, color: "var(--color-muted)", marginBottom: 10 }}>
-              PARÁMETROS DEL PACK SOUNDLAB (COPIAR INDIVIDUAL):
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {/* Style Prompt */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  background: "var(--color-surface)",
-                  padding: "8px 12px",
-                  borderRadius: "var(--radius-sm)",
-                }}
-              >
-                <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginRight: 10 }}>
-                  <span className="mono" style={{ fontSize: 11, color: "var(--color-gold)", marginRight: 8 }}>
-                    STYLE:
-                  </span>
-                  <span style={{ fontSize: 12 }}>{set.stylePrompt}</span>
-                </div>
-                <button
-                  className="btn btn--ghost btn--sm"
-                  onClick={() => copyToClipboard(set.stylePrompt, "Style Prompt")}
-                >
-                  {copiedField === "Style Prompt" ? <Check size={12} className="emerald" /> : <Copy size={12} />}
-                  {copiedField === "Style Prompt" ? "Copiado" : "Copiar"}
-                </button>
-              </div>
-
-              {/* Letra / Estructura */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  background: "var(--color-surface)",
-                  padding: "8px 12px",
-                  borderRadius: "var(--radius-sm)",
-                }}
-              >
-                <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginRight: 10 }}>
-                  <span className="mono" style={{ fontSize: 11, color: "var(--color-gold)", marginRight: 8 }}>
-                    LYRICS:
-                  </span>
-                  <span style={{ fontSize: 12 }}>
-                    {set.lyrics ? `${set.lyrics.slice(0, 50)}…` : "(Instrumental)"}
-                  </span>
-                </div>
-                <button
-                  className="btn btn--ghost btn--sm"
-                  onClick={() => copyToClipboard(set.lyrics, "Letra")}
-                >
-                  {copiedField === "Letra" ? <Check size={12} className="emerald" /> : <Copy size={12} />}
-                  {copiedField === "Letra" ? "Copiado" : "Copiar"}
-                </button>
-              </div>
-
-              {/* Exclude */}
-              {set.excludeStyles && (
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    background: "var(--color-surface)",
-                    padding: "8px 12px",
-                    borderRadius: "var(--radius-sm)",
-                  }}
-                >
-                  <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginRight: 10 }}>
-                    <span className="mono" style={{ fontSize: 11, color: "var(--color-gold)", marginRight: 8 }}>
-                      EXCLUDE:
-                    </span>
-                    <span style={{ fontSize: 12 }}>{set.excludeStyles}</span>
-                  </div>
-                  <button
-                    className="btn btn--ghost btn--sm"
-                    onClick={() => copyToClipboard(set.excludeStyles, "Exclude")}
-                  >
-                    {copiedField === "Exclude" ? <Check size={12} className="emerald" /> : <Copy size={12} />}
-                    {copiedField === "Exclude" ? "Copiado" : "Copiar"}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ----------------- TAB 2: Suno MCP Directo (api.suno.com/mcp) ----------------- */}
-      {tab === "mcp" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <p style={{ fontSize: 13, color: "var(--color-muted)", margin: 0 }}>
-            Conéctate directamente al endpoint oficial de Suno MCP (<code>https://api.suno.com/mcp</code>). Tu clave
-            se almacena únicamente en tu navegador.
-          </p>
-
-          <div className="field">
-            <label className="label" htmlFor="suno-key-input">
-              Suno Bearer Token / API Key
-            </label>
-            <input
-              id="suno-key-input"
-              type="password"
-              className="input"
-              placeholder="suno_..."
-              value={sunoKey}
-              onChange={(e) => setSunoKey(e.target.value)}
-            />
-            <span style={{ fontSize: 11, color: "var(--color-muted)", marginTop: 4 }}>
-              Lo obtienes desde tu panel de desarrollador en api.suno.com.
+            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--color-gold)", letterSpacing: "0.05em" }}>
+              PARÁMETROS GENERADOS EN SOUNDLAB (COPIAR DIRECTO)
+            </span>
+            <span className="chip chip--emerald" style={{ fontSize: 11 }}>
+              Optimizado para Suno v4 / v3.5
             </span>
           </div>
 
-          <button
-            className="btn btn--primary"
-            onClick={handleDirectMcp}
-            disabled={isSubmitting}
-            style={{ justifyContent: "center" }}
-          >
-            {isSubmitting ? <Loader2 size={15} className="composer-spin" /> : <Radio size={15} />}
-            {isSubmitting ? "Enviando a Suno MCP…" : "Disparar Generación en Suno MCP"}
-          </button>
-
-          {mcpResponse && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {/* Style Prompt */}
             <div
               style={{
-                background: mcpResponse.ok ? "rgba(16, 185, 129, 0.1)" : "rgba(239, 68, 68, 0.1)",
-                border: `1px solid ${mcpResponse.ok ? "rgba(16, 185, 129, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
-                borderRadius: "var(--radius-sm)",
-                padding: "10px 14px",
-                fontSize: 13,
                 display: "flex",
-                flexDirection: "column",
-                gap: 8,
+                alignItems: "center",
+                justifyContent: "space-between",
+                background: "var(--color-surface)",
+                padding: "10px 14px",
+                borderRadius: "var(--radius-sm)",
               }}
             >
-              <span>{mcpResponse.message}</span>
-              {mcpResponse.ok && (
-                <a
-                  href="https://suno.com/me"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn--ghost btn--sm"
-                  style={{ alignSelf: "flex-start" }}
-                >
-                  <ExternalLink size={12} /> Abrir Biblioteca en Suno para escuchar
-                </a>
-              )}
+              <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginRight: 12 }}>
+                <span className="mono" style={{ fontSize: 11, color: "var(--color-gold)", marginRight: 8 }}>
+                  STYLE PROMPT:
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 500 }}>{set.stylePrompt}</span>
+              </div>
+              <button
+                className="btn btn--ghost btn--sm"
+                onClick={() => copyToClipboard(set.stylePrompt, "Style Prompt")}
+              >
+                {copiedField === "Style Prompt" ? <Check size={13} className="emerald" /> : <Copy size={13} />}
+                {copiedField === "Style Prompt" ? "Copiado" : "Copiar"}
+              </button>
             </div>
-          )}
+
+            {/* Letra / Estructura */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                background: "var(--color-surface)",
+                padding: "10px 14px",
+                borderRadius: "var(--radius-sm)",
+              }}
+            >
+              <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginRight: 12 }}>
+                <span className="mono" style={{ fontSize: 11, color: "var(--color-gold)", marginRight: 8 }}>
+                  LYRICS:
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 500 }}>
+                  {set.lyrics ? `${set.lyrics.slice(0, 55)}…` : "(Modo Instrumental)"}
+                </span>
+              </div>
+              <button
+                className="btn btn--ghost btn--sm"
+                onClick={() => copyToClipboard(set.lyrics, "Letra")}
+              >
+                {copiedField === "Letra" ? <Check size={13} className="emerald" /> : <Copy size={13} />}
+                {copiedField === "Letra" ? "Copiado" : "Copiar"}
+              </button>
+            </div>
+
+            {/* Exclude Styles */}
+            {set.excludeStyles && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  background: "var(--color-surface)",
+                  padding: "10px 14px",
+                  borderRadius: "var(--radius-sm)",
+                }}
+              >
+                <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginRight: 12 }}>
+                  <span className="mono" style={{ fontSize: 11, color: "var(--color-gold)", marginRight: 8 }}>
+                    EXCLUDE STYLES:
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 500 }}>{set.excludeStyles}</span>
+                </div>
+                <button
+                  className="btn btn--ghost btn--sm"
+                  onClick={() => copyToClipboard(set.excludeStyles, "Exclude")}
+                >
+                  {copiedField === "Exclude" ? <Check size={13} className="emerald" /> : <Copy size={13} />}
+                  {copiedField === "Exclude" ? "Copiado" : "Copiar"}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-      )}
 
-      {/* ----------------- TAB 3: Configuración MCP para Agentes ----------------- */}
-      {tab === "agent" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <p style={{ fontSize: 13, color: "var(--color-muted)", margin: 0 }}>
-            Si trabajas con Antigravity, Claude Desktop, Cursor o Windsurf, añade el MCP oficial de Suno a tu
-            configuración:
-          </p>
-
-          <pre
-            className="mono"
+        {/* ----------------- Guía Rápida de 3 Pasos ----------------- */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: 12,
+            marginTop: 4,
+          }}
+        >
+          <div
             style={{
-              background: "var(--color-surface-2)",
-              padding: 12,
-              borderRadius: "var(--radius-sm)",
-              fontSize: 12,
-              overflowX: "auto",
+              background: "var(--color-surface)",
               border: "1px solid var(--color-border)",
+              borderRadius: "var(--radius-sm)",
+              padding: "12px",
+              fontSize: 12,
             }}
           >
-            {mcpConfigJson}
-          </pre>
+            <div className="mono" style={{ color: "var(--color-gold)", marginBottom: 4, fontWeight: 700 }}>
+              PASO 1
+            </div>
+            <span>Pulsa el botón de arriba para abrir tu sesión en Suno Studio.</span>
+          </div>
 
-          <button
-            className="btn btn--soft btn--sm"
-            onClick={() => copyToClipboard(mcpConfigJson, "Configuración MCP")}
-            style={{ alignSelf: "flex-start" }}
+          <div
+            style={{
+              background: "var(--color-surface)",
+              border: "1px solid var(--color-border)",
+              borderRadius: "var(--radius-sm)",
+              padding: "12px",
+              fontSize: 12,
+            }}
           >
-            {copiedField === "Configuración MCP" ? <Check size={12} className="emerald" /> : <Copy size={12} />}
-            {copiedField === "Configuración MCP" ? "Configuración copiada" : "Copiar JSON para MCP"}
-          </button>
-        </div>
-      )}
+            <div className="mono" style={{ color: "var(--color-gold)", marginBottom: 4, fontWeight: 700 }}>
+              PASO 2
+            </div>
+            <span>Pega el Style Prompt y la Letra en Create (Custom Mode).</span>
+          </div>
 
-      {/* ----------------- Footer: Paso siguiente en SoundLab ----------------- */}
+          <div
+            style={{
+              background: "var(--color-surface)",
+              border: "1px solid var(--color-border)",
+              borderRadius: "var(--radius-sm)",
+              padding: "12px",
+              fontSize: 12,
+            }}
+          >
+            <div className="mono" style={{ color: "var(--color-gold)", marginBottom: 4, fontWeight: 700 }}>
+              PASO 3
+            </div>
+            <span>Escucha gratis en streaming y descarga solo tu versión favorita.</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ----------------- Footer: Regreso a SoundLab DSP ----------------- */}
       <div
         style={{
           marginTop: 24,

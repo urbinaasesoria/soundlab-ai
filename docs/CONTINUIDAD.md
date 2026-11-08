@@ -18,7 +18,7 @@
 | **Base de Datos (Supabase)** | 🟢 Conectada | `https://pkjunhbuormzdkhbrxfd.supabase.co` (tablas `profiles`, `orders`, `credit_transactions`, RLS activas) |
 | **Copiloto Gemini AI** | 🟢 En vivo | Endpoint `/api/health` verificado con `gemini-2.5-flash` |
 | **Pasarela Payoneer** | 🟢 Enlazada | Link oficial de URBINA + Código QR en modal (`public/images/payment-qr.png`) |
-| **Pasarela Yape / Plin** | 🟢 Enlazada | Al 976624074 (URBINA ASESORÍA E INVERSIONES S.A.C.) con confirmación por WhatsApp |
+| **Pasarela Yape / Plin** | 🟢 Enlazada | QR nativo directo (Titular: MOISES URBINA SOJO · URBINA ASESORÍA E INVERSIONES S.A.C. · RUC 20611424478) |
 | **Pasarela Mercado Pago** | 🟡 Parcial | Cuenta `murbinasojo@gmail.com` con solicitud asistida por WhatsApp (links automáticos pendientes) |
 
 ---
@@ -48,7 +48,7 @@ npm run dev          # app local en http://localhost:5180
 **SoundLab AI** es una **herramienta complementaria** para producir en plataformas de generación musical
 (principalmente **SUNO**). **No es** un generador de audio ni un DAW.
 
-Titular: **URBINA ASESORÍA E INVERSIONES S.A.C.**
+Titular: **URBINA ASESORÍA E INVERSIONES S.A.C.** (RUC: **20611424478** · CEO: **MOISES URBINA SOJO**)
 
 Tres ideas que ordenan todo:
 

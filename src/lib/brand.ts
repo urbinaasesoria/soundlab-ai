@@ -21,8 +21,10 @@ const YEAR = new Date().getFullYear();
 export const BRAND = {
   /** Razón social completa del titular. No abreviar. */
   legalName: "URBINA ASESORÍA E INVERSIONES S.A.C.",
-  /** Registro Único de Contribuyentes oficial (SUNAT / Perú). */
-  ruc: "20614532551",
+  /** CEO y Representante Legal Oficial */
+  ceo: "MOISES URBINA SOJO",
+  /** Registro Único de Contribuyentes oficial (SUNAT / Perú). ÚNICO RUC VÁLIDO. */
+  ruc: "20611424478",
   /** Marca verbal principal (se muestra en el logotipo). */
   wordmark: "SOUNDLAB",
   /** Línea secundaria bajo la marca verbal. */

@@ -188,7 +188,7 @@ export function ShieldPage() {
     </div>
     <div class="cert-corp">
       <b>URBINA ASESORÍA E INVERSIONES S.A.C.</b><br>
-      RUC: 20614532551 · Lima, Perú<br>
+      RUC: 20611424478 · Lima, Perú<br>
       SoundLab AI · Client-Side Audio Engineering
     </div>
   </div>

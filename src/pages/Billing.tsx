@@ -790,7 +790,7 @@ export function BillingPage() {
                     <div style={{ marginTop: 8, padding: "6px 10px", background: "rgba(255,255,255,0.03)", borderRadius: 6, border: "1px solid var(--line)" }}>
                       <span className="mute" style={{ fontSize: 11.5, display: "block", lineHeight: 1.45 }}>
                         Destinatario Oficial: <b>MOISES URBINA SOJO</b><br />
-                        <span style={{ fontSize: 11, opacity: 0.85 }}>CEO de <b>URBINA ASESORÍA E INVERSIONES S.A.C.</b> (RUC 20614532551)</span>
+                        <span style={{ fontSize: 11, opacity: 0.85 }}>CEO de <b>URBINA ASESORÍA E INVERSIONES S.A.C.</b> (RUC 20611424478)</span>
                       </span>
                     </div>
                   </div>

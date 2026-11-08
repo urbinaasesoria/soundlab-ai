@@ -16,7 +16,7 @@ SoundLab AI soluciona estos problemas combinando **análisis acústico comercial
 
 ## Ecosistema Corporativo y Respaldo Institucional
 - **Empresa Titular:** URBINA ASESORÍA E INVERSIONES S.A.C.
-- **RUC:** 20614532551 (Lima, Perú).
+- **RUC:** 20611424478 (Lima, Perú).
 - **Contacto Corporativo:** info@urbinaaei.com
 - **Plataforma Web:** https://soundlab-ai-app.vercel.app/
 - **Filosofía del Producto:** Democratización de estándares de estudio comercial con privacidad soberana (Client-Side Audio Engineering).

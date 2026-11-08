@@ -1,0 +1,483 @@
+{
+  "edge_types": [
+    {
+      "attributes": [
+        {
+          "description": "Additional details about this ontology type.",
+          "name": "details",
+          "type": "text"
+        }
+      ],
+      "description": "Entidad utiliza una plataforma de generación musical o distribución.",
+      "name": "USES_PLATFORM",
+      "source_targets": [
+        {
+          "source": "MusicCreator",
+          "target": "PlatformCompany"
+        },
+        {
+          "source": "MusicProducer",
+          "target": "PlatformCompany"
+        },
+        {
+          "source": "MusicCreator",
+          "target": "MusicDistributionPlatform"
+        },
+        {
+          "source": "MusicProducer",
+          "target": "MusicDistributionPlatform"
+        }
+      ]
+    },
+    {
+      "attributes": [
+        {
+          "description": "Additional details about this ontology type.",
+          "name": "details",
+          "type": "text"
+        }
+      ],
+      "description": "Proveedor de servicios (pago, distribución) ofrece servicios a otra entidad.",
+      "name": "PROVIDES_SERVICE_TO",
+      "source_targets": [
+        {
+          "source": "PaymentProvider",
+          "target": "PlatformCompany"
+        },
+        {
+          "source": "MusicDistributionPlatform",
+          "target": "MusicCreator"
+        },
+        {
+          "source": "MusicDistributionPlatform",
+          "target": "MusicProducer"
+        }
+      ]
+    },
+    {
+      "attributes": [
+        {
+          "description": "Additional details about this ontology type.",
+          "name": "details",
+          "type": "text"
+        }
+      ],
+      "description": "Entidad comenta o critica públicamente a otra entidad o producto.",
+      "name": "COMMENTS_ON",
+      "source_targets": [
+        {
+          "source": "Person",
+          "target": "PlatformCompany"
+        },
+        {
+          "source": "Person",
+          "target": "MusicCreator"
+        },
+        {
+          "source": "SoundEngineer",
+          "target": "PlatformCompany"
+        },
+        {
+          "source": "MusicCreator",
+          "target": "PlatformCompany"
+        },
+        {
+          "source": "MusicProducer",
+          "target": "PlatformCompany"
+        }
+      ]
+    },
+    {
+      "attributes": [
+        {
+          "description": "Additional details about this ontology type.",
+          "name": "details",
+          "type": "text"
+        }
+      ],
+      "description": "Entidad apoya o respalda públicamente a otra entidad o producto.",
+      "name": "SUPPORTS",
+      "source_targets": [
+        {
+          "source": "Person",
+          "target": "PlatformCompany"
+        },
+        {
+          "source": "MusicCreator",
+          "target": "PlatformCompany"
+        },
+        {
+          "source": "MusicProducer",
+          "target": "PlatformCompany"
+        },
+        {
+          "source": "MarketingAgency",
+          "target": "PlatformCompany"
+        }
+      ]
+    },
+    {
+      "attributes": [
+        {
+          "description": "Additional details about this ontology type.",
+          "name": "details",
+          "type": "text"
+        }
+      ],
+      "description": "Entidad se opone o critica públicamente a otra entidad o producto.",
+      "name": "OPPOSES",
+      "source_targets": [
+        {
+          "source": "SoundEngineer",
+          "target": "PlatformCompany"
+        },
+        {
+          "source": "Person",
+          "target": "PlatformCompany"
+        },
+        {
+          "source": "MusicCreator",
+          "target": "PlatformCompany"
+        }
+      ]
+    },
+    {
+      "attributes": [
+        {
+          "description": "Additional details about this ontology type.",
+          "name": "details",
+          "type": "text"
+        }
+      ],
+      "description": "Entidad colabora con otra en proyectos musicales o comerciales.",
+      "name": "COLLABORATES_WITH",
+      "source_targets": [
+        {
+          "source": "MusicCreator",
+          "target": "MusicProducer"
+        },
+        {
+          "source": "MusicProducer",
+          "target": "MarketingAgency"
+        },
+        {
+          "source": "MarketingAgency",
+          "target": "PlatformCompany"
+        }
+      ]
+    },
+    {
+      "attributes": [
+        {
+          "description": "Additional details about this ontology type.",
+          "name": "details",
+          "type": "text"
+        }
+      ],
+      "description": "Entidad pertenece a una comunidad o grupo musical.",
+      "name": "MEMBER_OF",
+      "source_targets": [
+        {
+          "source": "MusicCreator",
+          "target": "MusicCommunity"
+        },
+        {
+          "source": "MusicProducer",
+          "target": "MusicCommunity"
+        },
+        {
+          "source": "Person",
+          "target": "MusicCommunity"
+        }
+      ]
+    },
+    {
+      "attributes": [
+        {
+          "description": "Additional details about this ontology type.",
+          "name": "details",
+          "type": "text"
+        }
+      ],
+      "description": "Entidad regula o establece estándares para otra entidad o práctica.",
+      "name": "REGULATES",
+      "source_targets": [
+        {
+          "source": "MusicDistributionPlatform",
+          "target": "MusicCreator"
+        },
+        {
+          "source": "MusicDistributionPlatform",
+          "target": "MusicProducer"
+        }
+      ]
+    },
+    {
+      "attributes": [
+        {
+          "description": "Additional details about this ontology type.",
+          "name": "details",
+          "type": "text"
+        }
+      ],
+      "description": "Entidad reporta o informa sobre otra entidad o producto.",
+      "name": "REPORTS_ON",
+      "source_targets": [
+        {
+          "source": "MusicCommunity",
+          "target": "PlatformCompany"
+        },
+        {
+          "source": "Person",
+          "target": "PlatformCompany"
+        }
+      ]
+    }
+  ],
+  "entity_types": [
+    {
+      "attributes": [
+        {
+          "description": "Nombre del creador o alias",
+          "name": "full_name",
+          "type": "text"
+        },
+        {
+          "description": "Plataforma principal (Suno, Udio, etc.)",
+          "name": "platform",
+          "type": "text"
+        },
+        {
+          "description": "Género musical principal que produce",
+          "name": "genre_focus",
+          "type": "text"
+        }
+      ],
+      "description": "Creador musical que usa IA (Suno/Udio) para generar pistas y publicarlas.",
+      "examples": [
+        "Creador de cumbia con Suno",
+        "Beatmaker que usa Udio"
+      ],
+      "name": "MusicCreator"
+    },
+    {
+      "attributes": [
+        {
+          "description": "Nombre del productor",
+          "name": "full_name",
+          "type": "text"
+        },
+        {
+          "description": "DAW principal (FL Studio, Ableton, Logic, etc.)",
+          "name": "daw",
+          "type": "text"
+        },
+        {
+          "description": "Años de experiencia en producción",
+          "name": "experience_years",
+          "type": "text"
+        }
+      ],
+      "description": "Productor musical híbrido que usa IA para generar ideas y luego las procesa en DAW.",
+      "examples": [
+        "Productor de trap latino",
+        "Beatmaker de lo-fi"
+      ],
+      "name": "MusicProducer"
+    },
+    {
+      "attributes": [
+        {
+          "description": "Nombre del ingeniero",
+          "name": "full_name",
+          "type": "text"
+        },
+        {
+          "description": "Especialidad (masterización, mezcla, etc.)",
+          "name": "specialty",
+          "type": "text"
+        },
+        {
+          "description": "Nivel de escepticismo hacia la IA",
+          "name": "skepticism_level",
+          "type": "text"
+        }
+      ],
+      "description": "Ingeniero de sonido o purista escéptico que exige métricas rigurosas (LUFS, True Peak, FFT).",
+      "examples": [
+        "Ingeniero de masterización",
+        "Purista de audio analógico"
+      ],
+      "name": "SoundEngineer"
+    },
+    {
+      "attributes": [
+        {
+          "description": "Nombre de la agencia",
+          "name": "org_name",
+          "type": "text"
+        },
+        {
+          "description": "Ubicación principal",
+          "name": "location",
+          "type": "text"
+        },
+        {
+          "description": "Tipo de clientes que atiende",
+          "name": "client_focus",
+          "type": "text"
+        }
+      ],
+      "description": "Agencia de marketing o contenido que crea jingles y música de fondo con IA.",
+      "examples": [
+        "Agencia de publicidad digital",
+        "Productora de jingles"
+      ],
+      "name": "MarketingAgency"
+    },
+    {
+      "attributes": [
+        {
+          "description": "Nombre de la empresa",
+          "name": "org_name",
+          "type": "text"
+        },
+        {
+          "description": "Nombre del producto principal",
+          "name": "product_name",
+          "type": "text"
+        },
+        {
+          "description": "Sitio web oficial",
+          "name": "website",
+          "type": "text"
+        }
+      ],
+      "description": "Empresa que desarrolla o comercializa la suite de herramientas (SoundLab AI).",
+      "examples": [
+        "URBINA ASESORÍA E INVERSIONES S.A.C.",
+        "SoundLab AI"
+      ],
+      "name": "PlatformCompany"
+    },
+    {
+      "attributes": [
+        {
+          "description": "Nombre del proveedor",
+          "name": "provider_name",
+          "type": "text"
+        },
+        {
+          "description": "Región donde opera principalmente",
+          "name": "region",
+          "type": "text"
+        },
+        {
+          "description": "Método de pago ofrecido",
+          "name": "payment_method",
+          "type": "text"
+        }
+      ],
+      "description": "Proveedor de servicios de pago (Yape, Plin, Stripe, PayPal, etc.).",
+      "examples": [
+        "Yape",
+        "Plin",
+        "Stripe",
+        "PayPal"
+      ],
+      "name": "PaymentProvider"
+    },
+    {
+      "attributes": [
+        {
+          "description": "Nombre de la plataforma",
+          "name": "platform_name",
+          "type": "text"
+        },
+        {
+          "description": "Tipo de servicio (streaming, distribución)",
+          "name": "service_type",
+          "type": "text"
+        },
+        {
+          "description": "Estándar de loudness que aplica",
+          "name": "loudness_standard",
+          "type": "text"
+        }
+      ],
+      "description": "Plataforma de distribución musical o streaming (Spotify, DistroKid, etc.).",
+      "examples": [
+        "Spotify",
+        "Apple Music",
+        "DistroKid",
+        "TuneCore"
+      ],
+      "name": "MusicDistributionPlatform"
+    },
+    {
+      "attributes": [
+        {
+          "description": "Nombre de la comunidad",
+          "name": "community_name",
+          "type": "text"
+        },
+        {
+          "description": "Plataforma donde reside (Facebook, Reddit, Discord)",
+          "name": "platform",
+          "type": "text"
+        },
+        {
+          "description": "Número aproximado de miembros",
+          "name": "member_count",
+          "type": "text"
+        }
+      ],
+      "description": "Comunidad o foro de músicos y creadores (grupos de Facebook, Reddit, Discord).",
+      "examples": [
+        "Grupo de productores de cumbia en Facebook",
+        "Subreddit de Suno AI"
+      ],
+      "name": "MusicCommunity"
+    },
+    {
+      "attributes": [
+        {
+          "description": "Nombre completo",
+          "name": "full_name",
+          "type": "text"
+        },
+        {
+          "description": "Rol general (usuario, cliente, etc.)",
+          "name": "role",
+          "type": "text"
+        }
+      ],
+      "description": "Cualquier persona natural no clasificada en los tipos específicos anteriores.",
+      "examples": [
+        "Usuario individual",
+        "Cliente potencial"
+      ],
+      "name": "Person"
+    },
+    {
+      "attributes": [
+        {
+          "description": "Nombre de la organización",
+          "name": "org_name",
+          "type": "text"
+        },
+        {
+          "description": "Tipo de organización",
+          "name": "org_type",
+          "type": "text"
+        }
+      ],
+      "description": "Cualquier organización no clasificada en los tipos específicos anteriores.",
+      "examples": [
+        "Pequeño sello discográfico",
+        "Asociación cultural"
+      ],
+      "name": "Organization"
+    }
+  ]
+}

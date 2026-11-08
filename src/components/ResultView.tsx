@@ -38,6 +38,21 @@ const ZONE_CLASS: Record<RiskZone, string> = {
   peligro: "bad",
 };
 
+export interface StreamingPlatform {
+  id: string;
+  name: string;
+  targetLufs: number;
+  maxTruePeak: number;
+  note: string;
+}
+
+export const STREAMING_PLATFORMS: StreamingPlatform[] = [
+  { id: "spotify", name: "Spotify & YouTube", targetLufs: -14, maxTruePeak: -1.0, note: "Estándar comercial (-14 LUFS / -1.0 dBTP)" },
+  { id: "apple", name: "Apple Music", targetLufs: -16, maxTruePeak: -1.0, note: "Mayor rango dinámico y preservación de transitorios (-16 LUFS)" },
+  { id: "tiktok", name: "TikTok & Reels", targetLufs: -11, maxTruePeak: -0.5, note: "Optimizado para altavoces móviles de alto impacto (-10 a -12 LUFS)" },
+  { id: "club", name: "Club & DJ / Beatport", targetLufs: -8, maxTruePeak: -0.2, note: "Loudness máximo para pistas de baile (-7 a -9 LUFS)" },
+];
+
 export function resultHeadline(zone: RiskZone): string {
   switch (zone) {
     case "optimo":
@@ -104,6 +119,8 @@ type TabId = "resumen" | "espectro" | "loudness" | "modulos" | "recos";
 
 export function ResultView({ result, scan, onForensic }: ResultViewProps) {
   const [tab, setTab] = useState<TabId>("resumen");
+  const [streamingTargetId, setStreamingTargetId] = useState<string>("spotify");
+  const selectedPlatform = STREAMING_PLATFORMS.find((p) => p.id === streamingTargetId) ?? STREAMING_PLATFORMS[0];
   const zone = result.ai.zone;
   const tone = TONE[zone];
   const signals = result.ai.signals.slice().sort((a, b) => b.value * b.weight - a.value * a.weight);
@@ -409,17 +426,84 @@ export function ResultView({ result, scan, onForensic }: ResultViewProps) {
 
       {tab === "loudness" && (
         <div className="result-panel stack-4">
+          {/* Selector de Target de Streaming 1-Clic */}
+          <div className="chart-card" style={{ padding: "14px 18px", background: "linear-gradient(135deg, rgba(212, 175, 55, 0.08), rgba(16, 185, 129, 0.05))" }}>
+            <div className="row-flex" style={{ justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+              <div>
+                <span className="mono" style={{ fontSize: 11, color: "var(--color-gold)", fontWeight: 700 }}>
+                  TARGETS AUTOMÁTICOS DE STREAMING (1-CLIC)
+                </span>
+                <div style={{ fontSize: 13, marginTop: 2 }}>
+                  Evalúa la conformidad exacta de tu master frente a las plataformas de distribución:
+                </div>
+              </div>
+              <div className="row-flex" style={{ gap: 6, flexWrap: "wrap" }}>
+                {STREAMING_PLATFORMS.map((plat) => {
+                  const active = plat.id === streamingTargetId;
+                  return (
+                    <button
+                      key={plat.id}
+                      type="button"
+                      className={`pill ${active ? "pill--active" : ""}`}
+                      onClick={() => setStreamingTargetId(plat.id)}
+                      style={{ fontSize: 12, padding: "5px 12px" }}
+                    >
+                      {plat.name} ({plat.targetLufs} LUFS)
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 12, fontSize: 12, background: "var(--surface)", padding: "8px 12px", borderRadius: 8 }}>
+              <Info size={14} color="var(--gold-ink)" style={{ flexShrink: 0 }} />
+              <div>
+                <b>{selectedPlatform.name}:</b> {selectedPlatform.note}. Tu pista mide <b>{result.loudness.lufs.toFixed(1)} LUFS</b> y <b>{result.loudness.truePeak.toFixed(2)} dBTP</b>.
+                {result.loudness.lufs > selectedPlatform.targetLufs + 1.5 ? (
+                  <span style={{ color: "var(--color-danger, #ef4444)", marginLeft: 6 }}>
+                    ⚠️ Riesgo de atenuación forzada en streaming (-{(result.loudness.lufs - selectedPlatform.targetLufs).toFixed(1)} dB).
+                  </span>
+                ) : result.loudness.lufs < selectedPlatform.targetLufs - 2.5 ? (
+                  <span style={{ color: "var(--color-gold, #f59e0b)", marginLeft: 6 }}>
+                    ⚠️ El volumen percibido puede sonar bajo frente a otros lanzamientos comerciales.
+                  </span>
+                ) : (
+                  <span style={{ color: "var(--color-emerald, #10b981)", marginLeft: 6 }}>
+                    ✅ Nivel óptimo dentro de la tolerancia de distribución.
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
           <GenreReference result={result} />
 
           <div className="report-grid">
             <div className="chart-card">
               <div className="chart-head">
-                <span className="chart-title">Métricas de master</span>
+                <span className="chart-title">Métricas de master vs {selectedPlatform.name}</span>
                 <span className="chart-note">ITU-R BS.1770 · dBTP</span>
               </div>
               <div className="range-list">
-                <RangeMeter label="Loudness integrado" value={result.loudness.lufs} min={-20} max={-4} target={[-14, -9]} unit="LUFS" />
-                <RangeMeter label="Pico real" value={result.loudness.truePeak} min={-6} max={2} target={[-1.5, -0.3]} unit="dBTP" decimals={2} />
+                <RangeMeter
+                  label="Loudness integrado"
+                  value={result.loudness.lufs}
+                  min={-22}
+                  max={-4}
+                  target={[selectedPlatform.targetLufs - 1.5, selectedPlatform.targetLufs + 1]}
+                  unit="LUFS"
+                  hint={`Target plataforma: ${selectedPlatform.targetLufs} LUFS`}
+                />
+                <RangeMeter
+                  label="Pico real (True Peak)"
+                  value={result.loudness.truePeak}
+                  min={-6}
+                  max={2}
+                  target={[-2.5, selectedPlatform.maxTruePeak]}
+                  unit="dBTP"
+                  decimals={2}
+                  hint={`Máx permitido: ${selectedPlatform.maxTruePeak} dBTP`}
+                />
                 <RangeMeter label="Rango de loudness (LRA)" value={result.loudness.lra} min={0} max={20} target={[5, 10]} unit="LU" />
                 <RangeMeter label="Crest factor" value={result.loudness.crest} min={0} max={24} target={[8, 14]} unit="dB" />
                 <RangeMeter label="Peak-to-loudness" value={result.loudness.plr} min={0} max={20} target={[7, 12]} unit="dB" />

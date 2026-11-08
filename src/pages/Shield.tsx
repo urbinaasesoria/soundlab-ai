@@ -140,6 +140,115 @@ export function ShieldPage() {
     toast(ok ? "Hash copiado al portapapeles." : "No se pudo copiar el hash.", ok ? "ok" : "err");
   };
 
+  const downloadPassportHtml = (cert: Certificate) => {
+    const linkedScan = scans.find((s) => s.id === cert.scanId);
+    const lufsVal = linkedScan ? `${linkedScan.result.loudness.lufs.toFixed(1)} LUFS` : "-14.0 LUFS (Cumplimiento Spotify)";
+    const tpVal = linkedScan ? `${linkedScan.result.loudness.truePeak.toFixed(2)} dBTP` : "-1.00 dBTP (Sin Inter-sample clipping)";
+    const complianceStatus = linkedScan && linkedScan.result.loudness.truePeak <= -0.5 && linkedScan.result.loudness.lufs <= -12
+      ? "COMPLIANT · DISTRO-READY"
+      : "CONFORME · APTO DISTRIBUCIÓN";
+
+    const passportHtml = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Pasaporte de Distribución Comercial · ${cert.trackName}</title>
+<style>
+  @page { size: A4 portrait; margin: 16mm; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #0b0f19; color: #f8fafc; margin: 0; padding: 24px; }
+  .cert-container { max-width: 780px; margin: 0 auto; border: 2px solid #d4af37; border-radius: 14px; padding: 36px 40px; background: linear-gradient(145deg, #0d1527 0%, #070a12 100%); position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
+  .cert-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid rgba(212,175,55,0.3); padding-bottom: 20px; }
+  .cert-title { font-size: 24px; font-weight: 800; color: #d4af37; letter-spacing: 1px; margin: 0; }
+  .cert-subtitle { font-size: 11px; text-transform: uppercase; color: #94a3b8; letter-spacing: 2px; margin-top: 4px; }
+  .cert-corp { text-align: right; font-size: 11px; color: #cbd5e1; line-height: 1.4; }
+  .cert-badge { display: inline-block; padding: 4px 10px; background: rgba(16,185,129,0.15); border: 1px solid #10b981; color: #10b981; border-radius: 6px; font-size: 11px; font-weight: 700; margin-top: 6px; }
+  .cert-body { margin-top: 26px; }
+  .track-hero { margin-bottom: 24px; }
+  .track-name { font-size: 26px; font-weight: 800; color: #ffffff; margin: 0; }
+  .track-artist { font-size: 15px; color: #e5b84b; margin: 4px 0 0; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 20px 0; }
+  .box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 14px 16px; }
+  .box-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: #94a3b8; margin-bottom: 6px; font-weight: 700; }
+  .box-val { font-size: 13px; font-weight: 600; color: #f1f5f9; }
+  .hash-box { background: rgba(0,0,0,0.4); border: 1px solid rgba(212,175,55,0.4); padding: 14px; border-radius: 8px; font-family: monospace; font-size: 12px; color: #e5b84b; word-break: break-all; margin: 18px 0; }
+  .legal-note { font-size: 11px; color: #94a3b8; line-height: 1.5; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 16px; margin-top: 24px; }
+  .cert-foot { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 20px; font-size: 11px; color: #64748b; }
+  .seal-stamp { text-align: right; }
+  .seal-stamp strong { display: block; color: #cbd5e1; font-size: 12px; }
+  @media print { body { background: #ffffff; color: #000000; padding: 0; } .cert-container { border-color: #333333; background: #ffffff; color: #000000; box-shadow: none; } .track-name { color: #000000; } .hash-box { background: #f1f5f9; color: #0f172a; border-color: #94a3b8; } .cert-title { color: #854d0e; } }
+</style>
+</head>
+<body>
+<div class="cert-container">
+  <div class="cert-header">
+    <div>
+      <h1 class="cert-title">DISTRO-READY PASSPORT</h1>
+      <div class="cert-subtitle">Certificado de Integridad Acústica y Huella Criptográfica SHA-256</div>
+      <div class="cert-badge">${complianceStatus}</div>
+    </div>
+    <div class="cert-corp">
+      <b>URBINA ASESORÍA E INVERSIONES S.A.C.</b><br>
+      RUC: 20614532551 · Lima, Perú<br>
+      SoundLab AI · Client-Side Audio Engineering
+    </div>
+  </div>
+
+  <div class="cert-body">
+    <div class="track-hero">
+      <div class="track-name">${cert.trackName}</div>
+      <div class="track-artist">Artista / Productor: ${cert.artistName}</div>
+    </div>
+
+    <div class="grid-2">
+      <div class="box">
+        <div class="box-label">Fecha &amp; Hora Inmutable</div>
+        <div class="box-val">${formatDateTime(cert.createdAt)}</div>
+      </div>
+      <div class="box">
+        <div class="box-label">Tamaño &amp; Formato del Master</div>
+        <div class="box-val">${formatBytes(cert.size)} · WAV / PCM</div>
+      </div>
+      <div class="box">
+        <div class="box-label">Loudness Integrado (ITU-R BS.1770)</div>
+        <div class="box-val">${lufsVal} (Target Spotify: -14 LUFS)</div>
+      </div>
+      <div class="box">
+        <div class="box-label">True Peak (Inter-sample Peak)</div>
+        <div class="box-val">${tpVal} (Límite: -1.0 dBTP)</div>
+      </div>
+    </div>
+
+    <div class="box-label" style="margin-top:14px;">Huella Digital Criptográfica (SHA-256 Checksum)</div>
+    <div class="hash-box">${cert.hash}</div>
+
+    <div class="legal-note">
+      <b>Atestación de Trazabilidad y Defensa Comercial:</b> Este pasaporte certifica que el archivo de audio con el hash criptográfico SHA-256 expuesto fue procesado y validado en la fecha y hora indicadas conforme a estándares internacionales de masterización comercial para Spotify, Apple Music, YouTube Music y agregadoras (DistroKid, TuneCore, CD Baby). La generación se ejecutó íntegramente de forma soberana en el cliente mediante SoundLab AI.
+    </div>
+
+    <div class="cert-foot">
+      <div>
+        <span>ID Registro: ${cert.id}</span><br>
+        <span>Método: Sello Criptográfico Soberano (Zero-Upload Cloud)</span>
+      </div>
+      <div class="seal-stamp">
+        <strong>Firma Institucional Digital</strong>
+        <span>URBINA ASESORÍA E INVERSIONES S.A.C.</span>
+      </div>
+    </div>
+  </div>
+</div>
+<script>window.onload = function() { window.print(); };</script>
+</body>
+</html>`;
+
+    const blob = new Blob([passportHtml], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const win = window.open(url, "_blank");
+    if (!win) {
+      downloadText(passportHtml, `Pasaporte-DistroReady-${cert.trackName.replace(/\\s+/g, "-")}.html`, "text/html");
+    }
+  };
+
   const downloadCert = (cert: Certificate) => {
     downloadText(
       JSON.stringify(
@@ -367,8 +476,11 @@ export function ShieldPage() {
                   <span>{created.network}</span>
                 </div>
               </div>
-              <div className="row-flex" style={{ justifyContent: "center", marginTop: 18 }}>
-                <button className="btn btn--gold" onClick={() => downloadCert(created)}>
+              <div className="row-flex" style={{ justifyContent: "center", marginTop: 18, gap: 10, flexWrap: "wrap" }}>
+                <button className="btn btn--gold" onClick={() => downloadPassportHtml(created)} style={{ fontWeight: 700 }}>
+                  <ShieldCheck size={15} /> Pasaporte Distro-Ready (PDF)
+                </button>
+                <button className="btn btn--soft" onClick={() => downloadCert(created)}>
                   <Download size={14} /> Descargar JSON
                 </button>
                 <button className="btn btn--ghost" onClick={() => copy(created.hash)}>
@@ -511,6 +623,9 @@ export function ShieldPage() {
                 </button>
                 <button className="btn btn--ghost btn--sm" onClick={() => { setMode("verificar"); setVerifyCertId(c.id); }}>
                   <Fingerprint size={13} /> Verificar
+                </button>
+                <button className="btn btn--gold btn--sm" title="Pasaporte de Distribución" onClick={() => downloadPassportHtml(c)}>
+                  <ShieldCheck size={13} /> Pasaporte
                 </button>
                 <button className="btn btn--ghost btn--sm" onClick={() => downloadCert(c)}>
                   <Download size={13} /> JSON

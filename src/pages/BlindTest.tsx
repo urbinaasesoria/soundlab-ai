@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BarChart3, Ear, Eye, Play, RotateCcw, Square, Upload } from "lucide-react";
+import { Link } from "react-router-dom";
+import { BarChart3, Ear, Eye, Play, RotateCcw, Sparkles, Square, Upload, Zap } from "lucide-react";
 import { useStudio } from "../lib/storage/store";
 import { decodeFile } from "../lib/audio/decode";
 import { commonTarget, interpret, levelMatch, type LevelMatch } from "../lib/audio/loudnessMatch";
@@ -292,7 +293,7 @@ export function BlindTestPage() {
             ) : (
               <div className="blind-reveal">
                 <Ear size={16} />
-                <div>
+                <div style={{ flex: 1 }}>
                   <b>
                     X era la versión {roleOf("x")} · Y era la versión {roleOf("y")}
                   </b>
@@ -301,11 +302,42 @@ export function BlindTestPage() {
                       ? "Marcaste empate: no se añade al recuento, porque un empate no informa sobre preferencia."
                       : `Preferiste la versión ${roleOf(revealed)}. ${
                           roleOf(revealed) === "procesada"
-                            ? "Cuenta como acierto a favor del procesado."
-                            : "Cuenta como fallo: el procesado no convenció."
+                            ? "¡Comprobado! Tu oído seleccionó la pista tratada con SoundLab AI (calidez analógica y de-harshing)."
+                            : "Cuenta como fallo: el procesado no convenció en esta toma."
                         }`}
                   </p>
-                  <button className="btn btn--gold btn--sm" onClick={() => { setRevealed(null); setXIsA(Math.random() < 0.5); }}>
+
+                  {/* CRO: Oferta Inmediata Eureka */}
+                  {revealed !== "tie" && roleOf(revealed) === "procesada" && (
+                    <div
+                      style={{
+                        marginTop: 14,
+                        padding: "12px 16px",
+                        background: "linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(16, 185, 129, 0.1))",
+                        border: "1px solid rgba(212, 175, 55, 0.4)",
+                        borderRadius: 10,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        flexWrap: "wrap",
+                        gap: 10,
+                      }}
+                    >
+                      <div style={{ fontSize: 13, lineHeight: 1.4 }}>
+                        <b style={{ color: "var(--color-gold, #e5b84b)", display: "block" }}>
+                          ✨ Tu oído lo confirma: SoundLab AI suena a estudio comercial.
+                        </b>
+                        <span style={{ opacity: 0.88 }}>
+                          Desbloquea exportación WAV 24-bit y tu Pasaporte Distro-Ready por solo <b>S/ 9.90 ($2.99)</b> en Tripwire o <b>S/ 15 ($4.90)</b> en Pack Starter.
+                        </span>
+                      </div>
+                      <Link to="/billing" className="btn btn--gold btn--sm" style={{ fontWeight: 700 }}>
+                        <Zap size={14} /> Aprovechar Oferta Especial
+                      </Link>
+                    </div>
+                  )}
+
+                  <button className="btn btn--gold btn--sm" onClick={() => { setRevealed(null); setXIsA(Math.random() < 0.5); }} style={{ marginTop: 12 }}>
                     Otra ronda con el mismo par
                   </button>
                 </div>

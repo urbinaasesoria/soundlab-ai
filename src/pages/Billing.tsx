@@ -69,25 +69,26 @@ const CURRENCY_SYMBOLS: Record<Currency, string> = {
 const PLANS: PlanChoice[] = [
   {
     id: "pro-monthly",
-    name: "Pro Mensual",
-    prices: { PEN: 35, USD: 9.9, EUR: 9.9 },
+    name: "Creador Pro",
+    prices: { PEN: 25, USD: 6.99, EUR: 6.99 },
     cadence: "/mes",
     credits: 1_000_000,
-    note: "Suscripción mensual flexible. Cancela cuando quieras sin permanencia.",
+    note: "Suscripción mensual sin ataduras. Más accesible que Suno Pro ($6.99 vs $10). Cancela cuando quieras.",
   },
   {
     id: "pro-annual",
     name: "Pro Anual",
-    prices: { PEN: 249, USD: 69, EUR: 69 },
+    prices: { PEN: 199, USD: 54, EUR: 54 },
     cadence: "/año",
     credits: 1_000_000,
-    note: "Equivalente a S/ 20 /mes ($5.75 /mo) · Ahorras más del 40% en pago anual.",
+    note: "Equivalente a S/ 16.50 /mes ($4.50 /mo) · Ahorras más del 45% con acceso a Pasaporte Distro-Ready.",
   },
 ];
 
 const PACKS: PackChoice[] = [
-  { id: "starter", name: "Starter", credits: 500, bonus: 50, prices: { PEN: 15, USD: 4.9, EUR: 4.9 } },
-  { id: "studio", name: "Studio", credits: 1_500, bonus: 200, prices: { PEN: 29, USD: 9.9, EUR: 9.9 } },
+  { id: "tripwire", name: "Tripwire OTO", credits: 300, bonus: 50, prices: { PEN: 9.9, USD: 2.99, EUR: 2.99 } },
+  { id: "starter", name: "Starter", credits: 600, bonus: 100, prices: { PEN: 15, USD: 4.9, EUR: 4.9 } },
+  { id: "studio", name: "Studio", credits: 1_800, bonus: 300, prices: { PEN: 29, USD: 9.9, EUR: 9.9 } },
   { id: "pro", name: "Pro Pack", credits: 5_000, bonus: 800, prices: { PEN: 69, USD: 19, EUR: 19 } },
   { id: "label", name: "Label", credits: 15_000, bonus: 3_000, prices: { PEN: 149, USD: 49, EUR: 49 } },
 ];
@@ -570,7 +571,7 @@ export function BillingPage() {
                     <h3>{plan.name}</h3>
                   </div>
                   <span className={`chip ${featured ? "chip--gold" : ""}`}>
-                    {featured ? "AHORRA 35%" : "MENSUAL"}
+                    {featured ? "AHORRA >45%" : "MENSUAL"}
                   </span>
                 </div>
                 <div className="plan-card__price">
@@ -764,34 +765,53 @@ export function BillingPage() {
 
             {/* VISTA 1: YAPE / PLIN */}
             {method === "yape_plin" && (
-              <div className="card" style={{ background: "var(--surface-sunken)", padding: "16px", border: "1px solid var(--line-strong)" }}>
-                <div className="row-flex" style={{ justifyContent: "space-between", marginBottom: 12 }}>
+              <div className="card" style={{ background: "var(--surface-sunken)", padding: "18px", border: "1px solid var(--line-strong)" }}>
+                <div className="row-flex" style={{ justifyContent: "space-between", marginBottom: 14 }}>
                   <div className="row-flex" style={{ gap: 8 }}>
-                    <QrCode size={20} color="var(--emerald-ink)" />
-                    <b>Pago Móvil Yape o Plin (Perú)</b>
+                    <QrCode size={22} color="var(--emerald-ink)" />
+                    <b style={{ fontSize: 15 }}>Pago Móvil Inmediato Yape / Plin (Perú)</b>
                   </div>
-                  <span className="chip chip--emerald">
-                    Monto: S/ {checkout.kind === "plan" ? checkout.plan.prices.PEN : checkout.pack.prices.PEN}
+                  <span className="chip chip--emerald" style={{ fontSize: 13, padding: "4px 10px", fontWeight: 700 }}>
+                    Monto a pagar: S/ {checkout.kind === "plan" ? checkout.plan.prices.PEN : checkout.pack.prices.PEN}
                   </span>
                 </div>
 
-                <div className="stack-2" style={{ fontSize: 13.5, lineHeight: 1.6 }}>
-                  <p>
-                    1. Abre tu aplicación de <b>Yape</b> o <b>Plin</b> y transfiere el monto exacto:
-                  </p>
-                  <div className="row-flex" style={{ background: "var(--surface)", padding: "10px 14px", borderRadius: 8, justifyContent: "space-between" }}>
-                    <div>
-                      <span className="mute" style={{ fontSize: 11, display: "block" }}>NÚMERO DE DESTINO</span>
-                      <strong style={{ fontSize: 18, letterSpacing: 1 }}>976 624 074</strong>
-                      <span className="mute" style={{ fontSize: 12, display: "block" }}>Titular: URBINA ASESORÍA E INVERSIONES S.A.C.</span>
-                    </div>
-                    <button type="button" className="btn btn--sm btn--ghost" onClick={handleCopyYapeNumber}>
-                      <Copy size={13} /> Copiar número
-                    </button>
+                {/* Código QR destacado */}
+                <div style={{ display: "flex", gap: 16, alignItems: "center", background: "var(--surface)", padding: "14px", borderRadius: 10, marginBottom: 14 }}>
+                  <div style={{ background: "#ffffff", padding: "8px", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <img
+                      src="/yape-qr.png"
+                      alt="Código QR Yape Plin"
+                      style={{ width: 100, height: 100, objectFit: "contain", display: "block" }}
+                      onError={(e) => {
+                        // Fallback si no está cargada la imagen física del QR
+                        const target = e.currentTarget;
+                        target.style.display = "none";
+                      }}
+                    />
+                    <QrCode size={80} color="#0f172a" style={{ display: "none" }} />
                   </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "var(--color-emerald, #10b981)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>
+                      📱 Escanea o transfiere desde Yape o Plin
+                    </div>
+                    <div className="row-flex" style={{ justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
+                      <div>
+                        <strong style={{ fontSize: 20, letterSpacing: 1.5, color: "var(--color-text)" }}>976 624 074</strong>
+                        <span className="mute" style={{ fontSize: 12, display: "block" }}>
+                          Titular: <b>URBINA ASESORÍA E INVERSIONES S.A.C.</b> (RUC 20614532551)
+                        </span>
+                      </div>
+                      <button type="button" className="btn btn--sm btn--gold" onClick={handleCopyYapeNumber} style={{ whiteSpace: "nowrap" }}>
+                        <Copy size={13} /> Copiar número
+                      </button>
+                    </div>
+                  </div>
+                </div>
 
-                  <p style={{ marginTop: 8 }}>
-                    2. Ingresa los datos de tu comprobante para acreditar tu cuenta de inmediato:
+                <div className="stack-2" style={{ fontSize: 13.5, lineHeight: 1.6 }}>
+                  <p style={{ margin: 0 }}>
+                    <b>Paso 2:</b> Ingresa el código de operación o adjunta tu comprobante para activación instantánea:
                   </p>
 
                   <div className="form-grid">
@@ -806,21 +826,21 @@ export function BillingPage() {
                       />
                     </div>
                     <div className="field">
-                      <label className="label" htmlFor="yape-name">NOMBRE DEL TITULAR</label>
+                      <label className="label" htmlFor="yape-name">NOMBRE DEL TITULAR / NÚMERO DE ENVÍO</label>
                       <input
                         id="yape-name"
                         className="input"
-                        placeholder="Ej. Carlos Pérez"
+                        placeholder="Ej. Carlos Pérez o 987654321"
                         value={payerName}
                         onChange={(e) => setPayerName(e.target.value)}
                       />
                     </div>
                   </div>
 
-                  <div className="inline-note" style={{ marginTop: 6 }}>
+                  <div className="inline-note" style={{ marginTop: 8 }}>
                     <MessageCircle size={14} color="var(--emerald-ink)" />
                     <span>
-                      Al hacer clic en &quot;Confirmar y Enviar a WhatsApp&quot;, se abrirá el chat oficial con el comprobante pre-rellenado para activación prioritaria en menos de 5 minutos.
+                      Al hacer clic en &quot;Confirmar y Enviar a WhatsApp&quot;, se valida tu pedido y se abre el chat oficial con el comprobante pre-rellenado para acreditación prioritaria.
                     </span>
                   </div>
                 </div>

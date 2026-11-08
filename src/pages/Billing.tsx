@@ -776,35 +776,26 @@ export function BillingPage() {
                   </span>
                 </div>
 
-                {/* Código QR destacado */}
-                <div style={{ display: "flex", gap: 16, alignItems: "center", background: "var(--surface)", padding: "14px", borderRadius: 10, marginBottom: 14 }}>
-                  <div style={{ background: "#ffffff", padding: "8px", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                {/* Código QR Oficial de Pago */}
+                <div style={{ display: "flex", gap: 18, alignItems: "center", background: "var(--surface)", padding: "16px", borderRadius: 12, marginBottom: 16, border: "1px solid rgba(16, 185, 129, 0.25)" }}>
+                  <div style={{ background: "#ffffff", padding: "8px", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 4px 14px rgba(0,0,0,0.25)" }}>
                     <img
-                      src="/yape-qr.png"
-                      alt="Código QR Yape Plin"
-                      style={{ width: 100, height: 100, objectFit: "contain", display: "block" }}
-                      onError={(e) => {
-                        // Fallback si no está cargada la imagen física del QR
-                        const target = e.currentTarget;
-                        target.style.display = "none";
-                      }}
+                      src="/images/payment-qr.png"
+                      alt="Código QR Oficial Yape y Plin"
+                      style={{ width: 130, height: 130, objectFit: "contain", display: "block" }}
                     />
-                    <QrCode size={80} color="#0f172a" style={{ display: "none" }} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: "var(--color-emerald, #10b981)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>
-                      📱 Escanea o transfiere desde Yape o Plin
+                    <div style={{ fontSize: 11, fontWeight: 800, color: "var(--color-emerald, #10b981)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
+                      📱 Escaneo Directo con Cámara Yape o Plin
                     </div>
-                    <div className="row-flex" style={{ justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
-                      <div>
-                        <strong style={{ fontSize: 20, letterSpacing: 1.5, color: "var(--color-text)" }}>976 624 074</strong>
-                        <span className="mute" style={{ fontSize: 12, display: "block" }}>
-                          Titular: <b>URBINA ASESORÍA E INVERSIONES S.A.C.</b> (RUC 20614532551)
-                        </span>
-                      </div>
-                      <button type="button" className="btn btn--sm btn--gold" onClick={handleCopyYapeNumber} style={{ whiteSpace: "nowrap" }}>
-                        <Copy size={13} /> Copiar número
-                      </button>
+                    <div style={{ fontSize: 13.5, lineHeight: 1.5, color: "var(--color-text)" }}>
+                      Abre tu aplicación de <b>Yape</b> o <b>Plin</b> en tu teléfono, selecciona <b>«Escanear QR»</b> y apunta al código en pantalla con el monto exacto.
+                    </div>
+                    <div style={{ marginTop: 8, padding: "6px 10px", background: "rgba(255,255,255,0.03)", borderRadius: 6, border: "1px solid var(--line)" }}>
+                      <span className="mute" style={{ fontSize: 11.5, display: "block" }}>
+                        Destinatario Oficial: <b>URBINA ASESORÍA E INVERSIONES S.A.C.</b> (RUC 20614532551)
+                      </span>
                     </div>
                   </div>
                 </div>

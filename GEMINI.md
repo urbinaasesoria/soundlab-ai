@@ -19,3 +19,4 @@
 ## 3. Integridad Técnica y Arquitectura del Producto
 - **SoundLab AI** es una aplicación orientada a la privacidad del músico (*Zero-Upload / 100% Client-Side DSP*).
 - Toda referencia a la marca en el código fuente debe centralizarse en `src/lib/brand.ts`.
+

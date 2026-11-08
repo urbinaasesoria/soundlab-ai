@@ -30,6 +30,7 @@ import { deriveFromAnalysis, type ReferenceDerivation } from "../lib/suno/fromAn
 import { aiConfigured, composeSet, improveSet, refineReferenceWithAi } from "../lib/ai/client";
 import { SUNO_LIMITS } from "../lib/suno/limits";
 import { SunoMcpModal } from "../components/SunoMcpModal";
+import { translateEsToEn } from "../lib/suno/translator";
 
 const PROFILES: { id: CreativeProfile; label: string; hint: string }[] = [
   { id: "fiel", label: "Fiel", hint: "Máxima obediencia al brief · Mayor Style Influence" },
@@ -44,6 +45,8 @@ export function CompositorPage() {
   const [refBusy, setRefBusy] = useState("");
   const [mcpModalOpen, setMcpModalOpen] = useState(false);
   const [showMoodGuide, setShowMoodGuide] = useState(false);
+  const [stylePromptTab, setStylePromptTab] = useState<"en" | "es">("en");
+  const [customStyleEs, setCustomStyleEs] = useState<string | null>(null);
   const [aiBusy, setAiBusy] = useState(false);
   const [aiNote, setAiNote] = useState<{ kind: "ok" | "err"; text: string; rationale?: string[] } | null>(null);
   const [aiSnapshot, setAiSnapshot] = useState<{
@@ -91,6 +94,7 @@ export function CompositorPage() {
 
   /** Cambiar de preset restablece BPM y exclusiones a las del género y recalcula parámetros. */
   const applyPreset = (presetId: string) => {
+    setCustomStyleEs(null);
     const preset = findPreset(presetId);
     setForm((prev) => {
       const next = {
@@ -205,6 +209,22 @@ export function CompositorPage() {
 
   const result = useMemo(() => compileSet(form), [form]);
 
+  /** Sincronización reactiva del Style Prompt: si el usuario hace ajustes quirúrgicos en español, varía el inglés en automático */
+  const finalResult = useMemo(() => {
+    if (customStyleEs === null) return result;
+    const en = translateEsToEn(customStyleEs);
+    return {
+      ...result,
+      stylePrompt: en,
+      stylePromptEs: customStyleEs,
+      checks: {
+        ...result.checks,
+        styleChars: en.length,
+        styleDense: en.length > SUNO_LIMITS.styleTargetMaxChars,
+      },
+    };
+  }, [result, customStyleEs]);
+
   const selectedMoodObj = useMemo(
     () => MOODS.find((m) => m.id === form.moodId) ?? MOODS[0],
     [form.moodId],
@@ -245,6 +265,7 @@ export function CompositorPage() {
    * - Si hay letra y SÍ se marcó "Mantener la letra intacta": conserva la letra intacta y estructura metatags.
    */
   const generateFullPackWithAi = async () => {
+    setCustomStyleEs(null);
     let currentIdea = form.idea.trim();
     const hasUserLyrics = Boolean(form.lyrics.trim());
 
@@ -398,21 +419,21 @@ export function CompositorPage() {
   };
 
   const exportPack = () => {
-    const pack = buildPack(result);
+    const pack = buildPack(finalResult);
     downloadBlob(
       new Blob([JSON.stringify(pack, null, 2)], { type: "application/json" }),
-      packFileName(result.title),
+      packFileName(finalResult.title),
     );
     toast("Pack exportado en JSON.", "ok");
   };
 
   const exportText = () => {
-    downloadText(formatPlainText(result), `${packFileName(result.title).replace(".json", "")}.txt`);
+    downloadText(formatPlainText(finalResult), `${packFileName(finalResult.title).replace(".json", "")}.txt`);
     toast("Set exportado en texto plano.", "ok");
   };
 
-  const stylePct = Math.min(100, (result.checks.styleChars / result.checks.styleLimit) * 100);
-  const lyricsPct = Math.min(100, (result.checks.lyricsChars / result.checks.lyricsLimit) * 100);
+  const stylePct = Math.min(100, (finalResult.checks.styleChars / finalResult.checks.styleLimit) * 100);
+  const lyricsPct = Math.min(100, (finalResult.checks.lyricsChars / finalResult.checks.lyricsLimit) * 100);
 
   return (
     <div className="page compositor-page">
@@ -1141,20 +1162,172 @@ export function CompositorPage() {
             </div>
 
             <div className="composer-out__block">
-              <div className="composer-out__row">
-                <span className="mono">STYLE PROMPT</span>
+              <div className="composer-out__row" style={{ alignItems: "center", marginBottom: 6 }}>
+                <span className="mono" style={{ fontWeight: 700 }}>STYLE PROMPT</span>
                 <span className="mono">
-                  {result.checks.styleChars}/{result.checks.styleLimit}
+                  {finalResult.checks.styleChars}/{finalResult.checks.styleLimit}
                 </span>
               </div>
+
+              {/* Selector de Pestañas: English (SUNO) vs Español (Editable) */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: 8,
+                  gap: 6,
+                }}
+              >
+                <div
+                  className="tier-switch"
+                  style={{
+                    padding: 2,
+                    background: "var(--surface-sunken)",
+                    borderRadius: 8,
+                    display: "inline-flex",
+                    border: "1px solid var(--line)",
+                  }}
+                  role="tablist"
+                  aria-label="Pestañas de Style Prompt"
+                >
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={stylePromptTab === "en"}
+                    className={`btn btn--xs ${stylePromptTab === "en" ? "btn--primary" : "btn--ghost"}`}
+                    style={{ padding: "3px 9px", fontSize: 11, borderRadius: 6, height: 26, gap: 5 }}
+                    onClick={() => setStylePromptTab("en")}
+                  >
+                    <span>🇺🇸 English (SUNO)</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={stylePromptTab === "es"}
+                    className={`btn btn--xs ${stylePromptTab === "es" ? "btn--primary" : "btn--ghost"}`}
+                    style={{ padding: "3px 9px", fontSize: 11, borderRadius: 6, height: 26, gap: 5 }}
+                    onClick={() => setStylePromptTab("es")}
+                  >
+                    <span>🇪🇸 Español (Editable)</span>
+                    {customStyleEs !== null && (
+                      <span
+                        style={{
+                          width: 6,
+                          height: 6,
+                          borderRadius: "50%",
+                          background: "var(--color-gold, #f2ca50)",
+                          display: "inline-block",
+                        }}
+                        title="Ajuste quirúrgico activo"
+                      />
+                    )}
+                  </button>
+                </div>
+
+                {customStyleEs !== null && (
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--xs"
+                    onClick={() => {
+                      setCustomStyleEs(null);
+                      toast("Prompt restablecido al generado automáticamente por el motor.", "info");
+                    }}
+                    title="Restablecer prompt al calculado automáticamente"
+                    style={{ fontSize: 10.5, color: "var(--color-muted)", padding: "2px 6px" }}
+                  >
+                    <X size={11} /> Restablecer
+                  </button>
+                )}
+              </div>
+
               <div className="composer-meter">
                 <span style={{ width: `${stylePct}%` }} />
               </div>
-              <p className="composer-out__text">{result.stylePrompt || "—"}</p>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <button className="btn btn--ghost btn--sm" onClick={() => copy(result.stylePrompt, "Style prompt")}>
-                  <ClipboardCopy size={12} /> Copiar
+
+              {stylePromptTab === "es" ? (
+                <div style={{ marginTop: 8, marginBottom: 10 }}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: "var(--color-gold, #f2ca50)",
+                      marginBottom: 6,
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    ⚡ <b>Ajuste quirúrgico en español:</b> Los cambios que edites aquí variarán la versión en inglés en automático.
+                  </div>
+                  <textarea
+                    className="input mono"
+                    value={customStyleEs !== null ? customStyleEs : finalResult.stylePromptEs}
+                    onChange={(e) => setCustomStyleEs(e.target.value)}
+                    rows={4}
+                    placeholder="Describe o afina el estilo en español (ej. acordeón nostálgico, solo de saxofón emotivo, bajo 808...)"
+                    style={{
+                      width: "100%",
+                      fontSize: 12.5,
+                      lineHeight: 1.5,
+                      background: "var(--surface-sunken)",
+                      border: "1px solid var(--color-gold, #f2ca50)",
+                      borderRadius: 8,
+                      padding: "8px 10px",
+                      color: "var(--text)",
+                      resize: "vertical",
+                      boxShadow: "0 0 0 1px rgba(242, 202, 80, 0.15)",
+                    }}
+                  />
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
+                    <small className="mute" style={{ fontSize: 11 }}>
+                      Sincronizado en tiempo real hacia versión en inglés
+                    </small>
+                    <small className="mono mute" style={{ fontSize: 11 }}>
+                      {(customStyleEs !== null ? customStyleEs : finalResult.stylePromptEs).length} car. (ES)
+                    </small>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ marginTop: 8, marginBottom: 10 }}>
+                  <p className="composer-out__text" style={{ minHeight: 60, margin: 0 }}>
+                    {finalResult.stylePrompt || "—"}
+                  </p>
+                  {customStyleEs !== null && (
+                    <small
+                      style={{
+                        display: "block",
+                        marginTop: 6,
+                        fontSize: 11,
+                        color: "var(--color-emerald, #10b981)",
+                        fontWeight: 600,
+                      }}
+                    >
+                      ✓ Sincronizado desde tus ajustes quirúrgicos en español
+                    </small>
+                  )}
+                </div>
+              )}
+
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                <button
+                  className="btn btn--primary btn--sm"
+                  onClick={() => copy(finalResult.stylePrompt, "Style prompt para SUNO (Inglés)")}
+                  title="Copia el prompt en inglés optimizado para SUNO"
+                >
+                  <ClipboardCopy size={12} /> Copiar para SUNO (Inglés)
                 </button>
+                {stylePromptTab === "es" && (
+                  <button
+                    className="btn btn--ghost btn--sm"
+                    onClick={() =>
+                      copy(
+                        customStyleEs !== null ? customStyleEs : finalResult.stylePromptEs,
+                        "Style prompt en español",
+                      )
+                    }
+                    title="Copia el texto descriptivo en español"
+                  >
+                    <ClipboardCopy size={12} /> Copiar en Español
+                  </button>
+                )}
                 {form.styleOverride && (
                   <button
                     className="btn btn--ghost btn--sm"
@@ -1294,7 +1467,7 @@ export function CompositorPage() {
         </aside>
       </div>
 
-      <SunoMcpModal open={mcpModalOpen} onClose={() => setMcpModalOpen(false)} set={result} />
+      <SunoMcpModal open={mcpModalOpen} onClose={() => setMcpModalOpen(false)} set={finalResult} />
     </div>
   );
 }

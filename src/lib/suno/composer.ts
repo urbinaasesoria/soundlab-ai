@@ -21,6 +21,7 @@
 import { BRAND } from "../brand";
 import { SUNO_LIMITS } from "./limits";
 import { findPreset, presetBpm, SUNO_PRESETS, type SunoPreset } from "./presets";
+import { translateEnToEs } from "./translator";
 
 /* ------------------------------- tipos ---------------------------------- */
 
@@ -79,6 +80,8 @@ export interface Decision {
 export interface ProductionSet {
   title: string;
   stylePrompt: string;
+  /** Versión traducida y estructurada al español para inspección y edición quirúrgica */
+  stylePromptEs: string;
   excludeStyles: string;
   lyrics: string;
   weirdness: number;
@@ -874,6 +877,7 @@ export function compileSet(form: CompositorForm): ProductionSet {
   return {
     title: slugTitle(form.idea || `${preset.name} ${effectiveMood.es}`),
     stylePrompt,
+    stylePromptEs: translateEnToEs(stylePrompt),
     excludeStyles,
     lyrics,
     weirdness: finalWeirdness,

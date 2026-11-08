@@ -201,11 +201,6 @@ export function BillingPage() {
       : checkout.pack.name
     : "";
 
-  const handleCopyYapeNumber = async () => {
-    await copyText("976624074");
-    toast("Número 976624074 copiado al portapapeles.", "ok");
-  };
-
   const handleYapeConfirm = () => {
     if (!checkout) return;
     if (!opCode.trim()) {
@@ -216,7 +211,7 @@ export function BillingPage() {
     setBusy(true);
 
     const whatsappMessage = encodeURIComponent(
-      `Hola SoundLab AI, acabo de realizar mi pago con Yape/Plin al 976624074.\n` +
+      `Hola SoundLab AI, acabo de realizar mi pago con Yape/Plin vía QR.\n` +
       `• Detalle: ${currentItemName}\n` +
       `• Monto: S/ ${checkout.kind === "plan" ? checkout.plan.prices.PEN : checkout.pack.prices.PEN}\n` +
       `• Código de Operación: ${opCode.trim()}\n` +
@@ -340,7 +335,7 @@ export function BillingPage() {
         <div className="pro-banner__body">
           <div className="pro-banner__title">Pasarelas de Pago Seguras &amp; Activación Inmediata</div>
           <p className="pro-banner__text">
-            Aceptamos <b>Yape y Plin (al 976624074)</b> para Perú sin comisión, <b>Mercado Pago</b> para tarjetas locales en Latinoamérica y <b>Payoneer</b> para clientes de EE. UU. e internacionales.
+            Aceptamos <b>Yape y Plin (vía QR oficial)</b> para Perú sin comisión, <b>Mercado Pago</b> para tarjetas locales en Latinoamérica y <b>Payoneer</b> para clientes de EE. UU. e internacionales.
           </p>
         </div>
         <div className="row-flex" style={{ gap: 6 }}>
@@ -680,7 +675,7 @@ export function BillingPage() {
           <div className="billing-reason">
             <Fingerprint size={18} />
             <b>Atención Directa por WhatsApp</b>
-            <p>Soporte técnico y validación inmediata de pagos al número directo 976624074.</p>
+            <p>Soporte técnico y validación inmediata de pagos en nuestro canal oficial.</p>
           </div>
           <div className="billing-reason">
             <Coins size={18} />
@@ -731,7 +726,7 @@ export function BillingPage() {
                 <Smartphone size={18} />
                 <span className="tier-card__body">
                   <span className="tier-card__name">🇵🇪 Yape / Plin</span>
-                  <span className="tier-card__desc">Perú · Al 976624074</span>
+                  <span className="tier-card__desc">Billetera móvil · Escaneo QR</span>
                 </span>
                 <span className="tier-card__meta mono">SIN COMISIÓN</span>
               </button>
@@ -780,7 +775,7 @@ export function BillingPage() {
                 <div style={{ display: "flex", gap: 18, alignItems: "center", background: "var(--surface)", padding: "16px", borderRadius: 12, marginBottom: 16, border: "1px solid rgba(16, 185, 129, 0.25)" }}>
                   <div style={{ background: "#ffffff", padding: "8px", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 4px 14px rgba(0,0,0,0.25)" }}>
                     <img
-                      src="/images/payment-qr.png"
+                      src="/images/yape-plin-qr.png"
                       alt="Código QR Oficial Yape y Plin"
                       style={{ width: 130, height: 130, objectFit: "contain", display: "block" }}
                     />
@@ -793,8 +788,9 @@ export function BillingPage() {
                       Abre tu aplicación de <b>Yape</b> o <b>Plin</b> en tu teléfono, selecciona <b>«Escanear QR»</b> y apunta al código en pantalla con el monto exacto.
                     </div>
                     <div style={{ marginTop: 8, padding: "6px 10px", background: "rgba(255,255,255,0.03)", borderRadius: 6, border: "1px solid var(--line)" }}>
-                      <span className="mute" style={{ fontSize: 11.5, display: "block" }}>
-                        Destinatario Oficial: <b>URBINA ASESORÍA E INVERSIONES S.A.C.</b> (RUC 20614532551)
+                      <span className="mute" style={{ fontSize: 11.5, display: "block", lineHeight: 1.45 }}>
+                        Destinatario Oficial: <b>MOISES URBINA SOJO</b><br />
+                        <span style={{ fontSize: 11, opacity: 0.85 }}>CEO de <b>URBINA ASESORÍA E INVERSIONES S.A.C.</b> (RUC 20614532551)</span>
                       </span>
                     </div>
                   </div>
